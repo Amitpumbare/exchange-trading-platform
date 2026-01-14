@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrdersService } from './orders.service';
+import {ChangeDetection} from '@angular/cli/lib/config/workspace-schema';
 
 interface Order {
   type: string;
@@ -20,9 +21,10 @@ export class OrdersComponent implements OnInit {
 
   orders: Order[] = [];
   openOrders: Order[] = [];
-  loading = true; // 🔥 MISSING PIECE
+  loading = true;
 
-  constructor(private ordersService: OrdersService) {
+  constructor(private ordersService: OrdersService, private cd : ChangeDetectorRef
+  ) {
     console.log('OrdersComponent constructor');
   }
 
@@ -41,6 +43,7 @@ export class OrdersComponent implements OnInit {
 
         this.loading = false; // 🔥 IMPORTANT
         console.log('Loading set to false');
+        this.cd.markForCheck();
       },
       error: (err) => {
         console.error('Orders API error:', err);
