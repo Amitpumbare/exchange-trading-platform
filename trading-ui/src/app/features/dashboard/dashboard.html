@@ -1,8 +1,11 @@
 <div class="dashboard">
   <div class="header">
     <div>
-      <p class="welcome-text">Welcome back,</p>
-      <h3 class="user-name">{{ user?.fullName }}</h3>
+      <p class="welcome-text">
+        Welcome back, <strong>{{ userName }}</strong>
+      </p>
+
+
     </div>
 
     <button class="logout-btn" (click)="onLogout()">Logout</button>

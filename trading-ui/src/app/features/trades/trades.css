@@ -1,0 +1,77 @@
+/* Grid */
+.trades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* Trade card */
+.trade-card {
+  background: linear-gradient(180deg, #ffffff, #f9fafb);
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.trade-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+
+/* Header: BUY / SELL */
+.trade-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.side.buy {
+  color: #22c55e;
+}
+
+.side.sell {
+  color: #ef4444;
+}
+
+/* Body */
+.trade-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Label + value */
+.label {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Time */
+.trade-time {
+  grid-column: span 2;
+  text-align: right;
+  font-size: 11px;
+  color: #38bdf8;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+/* Loading */
+.loading {
+  font-style: italic;
+  color: #6b7280;
+}

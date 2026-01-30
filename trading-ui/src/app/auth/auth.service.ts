@@ -5,10 +5,8 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  // 🔥 FIX: removed /api
   private baseUrl = 'http://localhost:8081/api/auth';
-
-  private currentUser: any = null;
+  private readonly TOKEN_KEY = 'jwt_token';
 
   constructor(private http: HttpClient) {}
 
@@ -20,19 +18,24 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/login`, payload);
   }
 
-  setUser(user: any) {
-    this.currentUser = user;
+  // 🔑 JWT handling
+  setToken(token: string) {
+    console.log('SET TOKEN called, key=', this.TOKEN_KEY, 'value=', token);
+    localStorage.setItem(this.TOKEN_KEY, token);
   }
 
-  getUser() {
-    return this.currentUser;
+  getToken(): string | null {
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    console.log('GET TOKEN called, key=', this.TOKEN_KEY, 'value=', token);
+    return token;
   }
+
 
   isLoggedIn(): boolean {
-    return this.currentUser != null;
+    return !!this.getToken();
   }
 
   logout() {
-    this.currentUser = null;
+    localStorage.removeItem(this.TOKEN_KEY);
   }
 }

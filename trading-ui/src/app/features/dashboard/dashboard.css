@@ -22,12 +22,21 @@
   margin-bottom: 30px;
 }
 
-/* Small welcome text */
+/* Welcome text (improved) */
 .welcome-text {
   margin: 0;
-  font-size: 14px;
-  color: #666;
+  font-size: 22px;          /* bigger */
+  font-weight: 600;
+  color: #2c3e50;           /* darker, clearer */
 }
+
+/* Highlight username */
+.welcome-text span,
+.welcome-text strong {
+  color: #3498db;           /* blue accent */
+  font-weight: 700;
+}
+
 
 /* User name */
 .user-name {

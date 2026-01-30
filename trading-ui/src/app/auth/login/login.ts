@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import {AuthService} from '../auth.service';
-import {Router} from '@angular/router';
+import { AuthService } from '../auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -11,9 +11,12 @@ import {Router} from '@angular/router';
   templateUrl: './login.html',
   styleUrls: ['./login.css']
 })
-export class LoginComponent implements OnInit{
+export class LoginComponent implements OnInit {
 
-  constructor( private auth: AuthService, private router: Router) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router
+  ) {}
 
   loginForm = new FormGroup({
     email: new FormControl('', [
@@ -36,35 +39,37 @@ export class LoginComponent implements OnInit{
   }
 
   onSubmit() {
-    console.log("Submit clicked");
-
     if (!this.loginForm.valid) {
-      console.log('Form invalid');
       return;
     }
 
     const { email, password, rememberMe } = this.loginForm.value!;
-    console.log("Sending payload:", { email, password });
 
     const payload = {
-      email: this.loginForm.value.email,
-      password: this.loginForm.value.password
+      email,
+      password
     };
 
     this.auth.login(payload).subscribe({
-      next: (res) => {
-        console.log("SERVER RESPONSE:", res);
-        this.auth.setUser(res);
+      next: (res: any) => {
+        // 🔑 Store JWT token
+        this.auth.setToken(res.token);
+
+        // after successful login
+        localStorage.setItem('userName', res.fullName);
+
+
+        // Navigate to dashboard
         this.router.navigate(['/dashboard']);
-        alert("Login Successfully");
+
+        alert('Login successful');
       },
-      error: (err) => {
-        console.error("LOGIN ERROR:", err);
+      error: () => {
+        alert('Invalid email or password');
       }
     });
 
-
-    // remember-me logic
+    // Remember-me logic (email only)
     if (rememberMe && email) {
       localStorage.setItem('loginEmail', email);
       localStorage.setItem('rememberMe', 'true');
@@ -73,7 +78,6 @@ export class LoginComponent implements OnInit{
       localStorage.removeItem('rememberMe');
     }
   }
-
 
   ngOnInit() {
     const remember = localStorage.getItem('rememberMe');

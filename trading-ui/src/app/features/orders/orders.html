@@ -1,31 +1,109 @@
-<h2>Open Orders</h2>
+<div class="tabs">
+  <button
+    [class.active]="view === 'OPEN'"
+    (click)="view = 'OPEN'">
+    Open Orders
+  </button>
 
-<!-- Loading state -->
-<div *ngIf="loading">
-  Loading orders...
+  <button
+    [class.active]="view === 'HISTORY'"
+    (click)="view = 'HISTORY'">
+    Order History
+  </button>
 </div>
 
-<!-- Empty state -->
-<div *ngIf="!loading && openOrders.length === 0" class="empty">
-  No open orders
-</div>
+<!-- ================= OPEN ORDERS ================= -->
+<div *ngIf="view === 'OPEN'">
 
-<!-- Orders list -->
-<div *ngIf="!loading" class="orders-grid">
-  <div class="order-card" *ngFor="let item of openOrders">
-    <div class="order-header">
-      <span class="type"
-            [class.buy]="item.type === 'BUY'"
-            [class.sell]="item.type === 'SELL'">
-        {{ item.type }}
-      </span>
+  <div class="orders-layout">
 
-      <span class="status">{{ item.status }}</span>
+    <!-- LEFT: ORDER BOOK -->
+    <div class="orders-book">
+
+      <h2>Open Orders</h2>
+
+      <div *ngIf="loading" class="loading">Loading orders...</div>
+      <div *ngIf="!loading && openOrders.length === 0" class="empty">No open orders</div>
+
+      <div *ngIf="!loading" class="orders-grid">
+        <div class="order-card"
+             *ngFor="let item of openOrders"
+             (click)="selectOrder(item)"
+             [class.selected]="item === selectedOrder"
+             [class.buy]="item.type === 'BUY'"
+             [class.sell]="item.type === 'SELL'">
+
+          <div class="order-header">
+            <span class="type"
+                  [class.buy]="item.type === 'BUY'"
+                  [class.sell]="item.type === 'SELL'">
+              {{ item.type }}
+            </span>
+            <span class="status">{{ item.status }}</span>
+          </div>
+
+          <div class="order-body">
+            <p><strong>Price:</strong> {{ item.price }}</p>
+            <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+            <p class="order-message">{{ item.message }}</p>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
-    <div class="order-body">
-      <p><strong>Price:</strong> {{ item.price }}</p>
-      <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+    <!-- RIGHT: ORDER TICKET -->
+    <div class="ticket-container">
+      <div class="order-ticket" *ngIf="selectedOrder">
+
+        <h3>Order Ticket</h3>
+
+        <div class="market-context">
+          Trading against {{ selectedOrder.type }}  {{ selectedOrder.price }}
+        </div>
+
+        <label>Side</label>
+        <select [(ngModel)]="ticket.type"
+                [class.buy]="ticket.type === 'BUY'"
+                [class.sell]="ticket.type === 'SELL'">
+          <option value="BUY">BUY</option>
+          <option value="SELL">SELL</option>
+        </select>
+
+        <label>Price</label>
+        <input type="number" [(ngModel)]="ticket.price">
+
+        <label>Quantity</label>
+        <input type="number" [(ngModel)]="ticket.quantity">
+
+        <button (click)="placeOrder()">Place Order</button>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= ORDER HISTORY ================= -->
+<div *ngIf="view === 'HISTORY'">
+
+  <div class="orders-grid">
+    <div class="order-card"
+         *ngFor="let item of history"
+         [class.filled]="item.status === 'FILLED'"
+         [class.cancelled]="item.status === 'CANCELLED'">
+      <div class="order-header">
+        <span class="type">{{ item.type }}</span>
+        <span class="status">{{ item.status }}</span>
+      </div>
+
+      <div class="order-body">
+        <p><strong>Price:</strong> {{ item.price }}</p>
+        <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+        <p class="order-message">{{ item.message }}</p>
+      </div>
     </div>
   </div>
+
 </div>

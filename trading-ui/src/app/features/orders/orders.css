@@ -1,40 +1,236 @@
+/* ============================
+   TOP TABS (Open / History)
+   ============================ */
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tabs button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tabs button.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+
+/* ============================
+   MARKET CONTEXT (Blue text in ticket)
+   ============================ */
+
+.market-context {
+  font-size: 11px;
+  color: #38bdf8;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+
+/* ============================
+   MAIN LAYOUT
+   ============================ */
+
+.orders-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  height: calc(100vh - 160px);
+}
+
+.orders-book {
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+
+/* ============================
+   ORDER GRID
+   ============================ */
+
 .orders-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
 }
 
+
+/* ============================
+   ORDER CARDS
+   ============================ */
+
 .order-card {
-  background: #fff;
-  padding: 16px;
+  background: linear-gradient(180deg, #ffffff, #f9fafb);
+  padding: 14px;
   border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.order-card.selected {
+  border: 2px solid #3b82f6;
 }
 
 .order-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
-.type {
-  font-weight: bold;
-}
-
-.buy {
-  color: #2ecc71;
-}
-
-.sell {
-  color: #e74c3c;
-}
+.buy { color: #22c55e; }
+.sell { color: #ef4444; }
 
 .status {
-  font-size: 12px;
-  color: #777;
+  font-size: 11px;
+  color: #6b7280;
 }
 
-.empty {
-  color: #777;
-  font-style: italic;
+.order-message {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* ============================
+   OPEN ORDER SIDE COLORING
+   ============================ */
+
+/* BUY orders get green left bar */
+.order-card.buy {
+  border-left: 4px solid #22c55e;
+}
+
+/* SELL orders get red left bar */
+.order-card.sell {
+  border-left: 4px solid #ef4444;
+}
+
+
+
+/* ============================
+   HISTORY STYLING
+   ============================ */
+
+.order-card.filled {
+  border-left: 4px solid #22c55e;
+}
+
+.order-card.cancelled {
+  border-left: 4px solid #ef4444;
+  opacity: 0.85;
+}
+
+
+/* ============================
+   ORDER TICKET PANEL
+   ============================ */
+
+.ticket-container {
+  position: relative;
+}
+
+.order-ticket {
+  position: sticky;
+  top: 20px;
+  background: linear-gradient(180deg, #0b1220, #0f172a);
+  border-radius: 10px;
+  padding: 14px;
+  color: #e5e7eb;
+  border: 1px solid #1e293b;
+}
+
+
+/* ============================
+   TICKET LABELS
+   ============================ */
+
+.order-ticket label {
+  font-size: 10px;
+  color: #94a3b8;
+  display: block;
+  margin-top: 8px;
+}
+
+
+/* ============================
+   TICKET INPUTS (IMPORTANT)
+   ============================ */
+
+.order-ticket input,
+.order-ticket select {
+  width: 100%;
+  padding: 7px 8px;
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  color: #f8fafc;
+  box-sizing: border-box;     /* CRITICAL: keeps inputs inside box */
+  outline: none;
+}
+
+.order-ticket input:focus,
+.order-ticket select:focus {
+  border-color: #38bdf8;
+}
+
+
+/* ============================
+   BUY / SELL COLOR IN TICKET
+   ============================ */
+
+.order-ticket select.buy {
+  color: #22c55e;
+  border-color: #22c55e;
+}
+
+.order-ticket select.sell {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+
+/* ============================
+   PLACE ORDER BUTTON
+   ============================ */
+
+.order-ticket button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 9px;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.order-ticket button:hover {
+  filter: brightness(1.1);
+}
+
+
+/* ============================
+   REMOVE NUMBER INPUT SPINNERS
+   ============================ */
+
+/* Chrome / Edge */
+.order-ticket input[type="number"]::-webkit-inner-spin-button,
+.order-ticket input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.order-ticket input[type="number"] {
+  -moz-appearance: textfield;
 }

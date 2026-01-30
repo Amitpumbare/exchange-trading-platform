@@ -10,7 +10,8 @@ import java.time.Instant;
         name = "orders",
         indexes = {
                 @Index(name = "idx_order_type_price", columnList = "type, price"),
-                @Index(name = "idx_order_status", columnList = "status")
+                @Index(name = "idx_order_status", columnList = "status"),
+                @Index(name = "idx_order_user", columnList = "user_id")
         }
 )
 public class Order implements Serializable {
@@ -20,6 +21,9 @@ public class Order implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -38,7 +42,7 @@ public class Order implements Serializable {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(nullable = false,updatable = true)
+    @Column(nullable = false)
     private String message;
 
     // ---------- Constructors ----------
@@ -47,6 +51,7 @@ public class Order implements Serializable {
     }
 
     public Order(Long id,
+                 Long userId,
                  OrderType type,
                  double price,
                  long quantity,
@@ -54,12 +59,13 @@ public class Order implements Serializable {
                  Instant createdAt,
                  String message) {
         this.id = id;
+        this.userId = userId;
         this.type = type;
         this.price = price;
         this.quantity = quantity;
         this.status = status;
         this.createdAt = createdAt;
-        this.message=message;
+        this.message = message;
     }
 
     // ---------- Getters & Setters ----------
@@ -72,6 +78,15 @@ public class Order implements Serializable {
         this.id = id;
     }
 
+    // ✅ NEW
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
     public OrderType getType() {
         return type;
     }
@@ -80,7 +95,9 @@ public class Order implements Serializable {
         this.type = type;
     }
 
-    public double getPrice() { return price; }
+    public double getPrice() {
+        return price;
+    }
 
     public void setPrice(double price) {
         this.price = price;
@@ -106,9 +123,15 @@ public class Order implements Serializable {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
 
-    public String getMessage(){ return message; }
+    public String getMessage() {
+        return message;
+    }
 
-    public void setMessage(String message){ this.message=message; }
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }

@@ -1,2 +1,33 @@
-<h3>Trades Page</h3>
-<p>Trades will be shown here</p>
+<h2>Trade History</h2>
+
+<div *ngIf="loading" class="loading">Loading trades...</div>
+
+<div *ngIf="!loading" class="trades-grid">
+
+  <div class="trade-card" *ngFor="let t of trades">
+
+    <div class="trade-header">
+      <div class="side buy">BUY #{{ t.buyOrderId }}</div>
+      <div class="side sell">SELL #{{ t.sellOrderId }}</div>
+    </div>
+
+    <div class="trade-body">
+      <div>
+        <span class="label">Price</span>
+        <span class="value">{{ t.price }}</span>
+      </div>
+
+      <div>
+        <span class="label">Quantity</span>
+        <span class="value">{{ t.quantity }}</span>
+      </div>
+
+      <div class="trade-time">
+        {{ t.executedAt | date:'short' }}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

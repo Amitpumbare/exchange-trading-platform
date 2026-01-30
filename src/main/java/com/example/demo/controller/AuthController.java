@@ -4,14 +4,12 @@ import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.LoginResponse;
 import com.example.demo.dto.SignUpRequest;
 import com.example.demo.model.User;
+import com.example.demo.security.JwtUtil;
 import com.example.demo.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -19,9 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService){
+    public AuthController(AuthService authService, JwtUtil jwtUtil){
         this.authService = authService;
+        this.jwtUtil=jwtUtil;
     }
 
     @PostMapping("/signup")
@@ -46,8 +46,10 @@ public class AuthController {
                 loginRequest.getPassword()
         );
 
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+
         LoginResponse response = new LoginResponse(
-                "Login successful",
+                token,
                 user.getId(),
                 user.getFullName(),
                 user.getEmail()
@@ -55,8 +57,5 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
-
-
-
 
 }

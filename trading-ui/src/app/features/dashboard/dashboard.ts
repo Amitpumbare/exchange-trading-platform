@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
-import {Router, RouterLink, RouterOutlet} from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,15 +12,21 @@ import {Router, RouterLink, RouterOutlet} from '@angular/router';
 })
 export class DashboardComponent {
 
-  user: any;
+  userName = '';
 
-  constructor(private authService: AuthService, private router: Router) {
-    this.user = this.authService.getUser();
-    this.router=router;
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
+    this.userName = localStorage.getItem('userName') || '';
   }
 
   onLogout() {
     this.authService.logout();
+    localStorage.removeItem('userName');
     this.router.navigate(['/login']);
   }
 }
+

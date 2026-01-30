@@ -43,10 +43,11 @@ public class OrderService {
     // CREATE ORDER
     @Transactional
     @CacheEvict(value = "allOrders", allEntries = true)
-    public Order createOrder(OrderType type, double price, long quantity) {
+    public Order createOrder(Long userId, OrderType type, double price, long quantity) {
 
         // 1️⃣ Create order
         Order order = new Order();
+        order.setUserId(userId);
         order.setType(type);
         order.setPrice(price);
         order.setQuantity(quantity);
@@ -82,10 +83,11 @@ public class OrderService {
 
 
     // GET ALL ORDERS
-    @Cacheable(value = "allOrders")
-    public List<Order> getALLOrders() {
-        return orderRepository.findAll();
+//    @Cacheable(value = "ordersByUser", key = "#userId")
+    public List<Order> getOrdersForUser(Long userId) {
+        return orderRepository.findByUserId(userId);
     }
+
 
     // GET ALL TRADES
     @Cacheable(value = "allTrades")
@@ -107,64 +109,64 @@ public class OrderService {
                 .orElseThrow(() -> new TradeNotFoundException(id));
     }
 
-    // CANCEL ORDER
-    @Caching(
-            evict = {
-                    @CacheEvict(value = "orders", key = "#id"),
-                    @CacheEvict(value = "allOrders", allEntries = true)
-            }
-    )
-    public Order cancelOrderById(Long id) {
-
-        Order o = orderRepository.findById(id)
-                .orElseThrow(() -> new OrderNotFoundException(id));
-
-        switch (o.getStatus()) {
-
-            case FILLED ->
-                    throw new OrderAlreadyFilledException(o.getId());
-
-            case CANCELLED ->
-                    throw new OrderAlreadyCancelledException(o.getId());
-
-            case OPEN, PARTIALLY_FILLED ->
-            { return cancelOpenOrPartial(o); }
-
-            default -> {
-                return o;
-            }
-        }
-    }
-
-    private Order cancelOpenOrPartial(Order order) {
-        orderMatchingEngine.removeOrder(order);
-        order.setStatus(OrderStatus.CANCELLED);
-        order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
-        return orderRepository.save(order);
-    }
-
-
-    // MODIFY
-    @Transactional
-    @Caching(
-            evict = {
-                    @CacheEvict(value = "orders", key = "#id"),
-                    @CacheEvict(value = "allOrders", allEntries = true)
-            }
-    )
-    public Order modifyOrderById(Long id, ModifyOrderRequest req) {
-
-        orderRepository.findById(id)
-                .orElseThrow(() -> new OrderNotFoundException(id));
-
-        cancelOrderById(id);
-
-        return createOrder(
-                req.getType(),
-                req.getPrice(),
-                req.getQuantity()
-        );
-    }
+//    // CANCEL ORDER
+//    @Caching(
+//            evict = {
+//                    @CacheEvict(value = "orders", key = "#id"),
+//                    @CacheEvict(value = "allOrders", allEntries = true)
+//            }
+//    )
+//    public Order cancelOrderById(Long id) {
+//
+//        Order o = orderRepository.findById(id)
+//                .orElseThrow(() -> new OrderNotFoundException(id));
+//
+//        switch (o.getStatus()) {
+//
+//            case FILLED ->
+//                    throw new OrderAlreadyFilledException(o.getId());
+//
+//            case CANCELLED ->
+//                    throw new OrderAlreadyCancelledException(o.getId());
+//
+//            case OPEN, PARTIALLY_FILLED ->
+//            { return cancelOpenOrPartial(o); }
+//
+//            default -> {
+//                return o;
+//            }
+//        }
+//    }
+//
+//    private Order cancelOpenOrPartial(Order order) {
+//        orderMatchingEngine.removeOrder(order);
+//        order.setStatus(OrderStatus.CANCELLED);
+//        order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
+//        return orderRepository.save(order);
+//    }
+//
+//
+//    // MODIFY
+//    @Transactional
+//    @Caching(
+//            evict = {
+//                    @CacheEvict(value = "orders", key = "#id"),
+//                    @CacheEvict(value = "allOrders", allEntries = true)
+//            }
+//    )
+//    public Order modifyOrderById(Long id, ModifyOrderRequest req) {
+//
+//        orderRepository.findById(id)
+//                .orElseThrow(() -> new OrderNotFoundException(id));
+//
+//        cancelOrderById(id);
+//
+//        return createOrder(
+//                req.getType(),
+//                req.getPrice(),
+//                req.getQuantity()
+//        );
+//    }
 }
 
 
