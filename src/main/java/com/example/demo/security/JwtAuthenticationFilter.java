@@ -40,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 Long userId = claims.get("userId", Long.class);
 
-                // 🔐 THIS IS THE MISSING STEP
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userId,          // principal

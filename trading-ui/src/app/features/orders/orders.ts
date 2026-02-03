@@ -1,15 +1,16 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrdersService } from './orders.service';
-import {ChangeDetection} from '@angular/cli/lib/config/workspace-schema';
-import {FormsModule} from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 interface Order {
+  id?: number;
   type: string;
   price: number;
   quantity: number;
   status: string;
   message: string;
+  processing?: boolean;
 }
 
 @Component({
@@ -22,72 +23,112 @@ interface Order {
 export class OrdersComponent implements OnInit {
 
   orders: Order[] = [];
-  history: Order[] = [];
   openOrders: Order[] = [];
+  history: Order[] = [];
   loading = true;
+
   selectedOrder?: Order;
   view: 'OPEN' | 'HISTORY' = 'OPEN';
-
-
-  constructor(private ordersService: OrdersService, private cd : ChangeDetectorRef
-  ) {
-    console.log('OrdersComponent constructor');
-  }
-
-  ngOnInit(): void {
-    console.log('OrdersComponent ngOnInit');
-    this.loadOrders();
-
-  }
-
-  placeOrder(){
-    this.ordersService.createOrder(this.ticket).subscribe({
-      next: (order: Order) => {
-        alert(`Status: ${order.status}\n${order.message}`);
-        this.loadOrders();
-      }
-    })
-  }
-
-  loadOrders(){
-    this.loading = true;
-
-    this.ordersService.getOrders().subscribe({
-      next: (res: Order[]) => {
-        console.log('Orders API response:', res);
-
-        this.orders = res;
-        this.openOrders = this.orders.filter(
-          o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
-        );
-
-        this.history = this.orders.filter(
-          o => o.status === 'FILLED' || o.status === 'CANCELLED'
-        );
-
-
-        this.loading = false; // 🔥 IMPORTANT
-        console.log('Loading set to false');
-        this.cd.markForCheck();
-      },
-      error: (err) => {
-        console.error('Orders API error:', err);
-        this.loading = false;
-      }
-    });
-  }
 
   ticket = {
     type: 'BUY',
     price: 0,
     quantity: 0
+  };
+
+  constructor(
+    private ordersService: OrdersService,
+    private cd: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.loadOrders();
   }
 
-  selectOrder(order: Order){
+  loadOrders() {
+    this.loading = true;
+
+    this.ordersService.getOrders().subscribe({
+      next: (res: Order[]) => {
+        this.orders = res;
+
+        this.openOrders = res.filter(
+          o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+        );
+
+        this.history = res.filter(
+          o => o.status === 'FILLED' || o.status === 'CANCELLED'
+        );
+
+        this.loading = false;
+        this.cd.markForCheck();
+      },
+      error: () => {
+        this.loading = false;
+        this.cd.markForCheck();
+      }
+    });
+  }
+
+  placeOrder() {
+    this.ordersService.createOrder(this.ticket).subscribe({
+      next: () => {
+        this.selectedOrder = undefined;
+        this.loadOrders();
+      }
+    });
+  }
+
+  cancelOrder(orderId: number, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+
+    const order = this.openOrders.find(o => o.id === orderId);
+    if (!order || order.processing) return;
+
+    order.processing = true;
+
+    this.ordersService.cancelOrder(orderId).subscribe({
+      next: () => {
+        this.loadOrders();
+      },
+      error: () => {
+        order.processing = false;
+        this.loadOrders();
+      }
+    });
+  }
+
+
+  modifyOrder(orderId: number, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+
+    if (!this.selectedOrder || this.selectedOrder.id !== orderId) return;
+
+    const order = this.selectedOrder;
+    if (order.processing) return;
+
+    order.processing = true;
+
+    this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
+      next: () => {
+        this.selectedOrder = undefined;
+        this.loadOrders();
+      },
+      error: () => order.processing = false
+    });
+  }
+
+
+  selectOrder(order: Order) {
+    // toggle select / deselect
+    if (this.selectedOrder?.id === order.id) {
+      this.selectedOrder = undefined;
+      return;
+    }
+
     this.selectedOrder = order;
-    this.ticket.type = order.type === 'BUY'?'SELL':'BUY';
-    this.ticket.price=order.price;
-    this.ticket.quantity=0;
+    this.ticket.type = order.type;
+    this.ticket.price = order.price;
+    this.ticket.quantity = order.quantity;
   }
-
 }

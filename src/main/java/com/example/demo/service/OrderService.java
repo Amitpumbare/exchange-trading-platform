@@ -2,10 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.ModifyOrderRequest;
 import com.example.demo.engine.OrderMatchingEngine;
-import com.example.demo.exception.OrderAlreadyCancelledException;
-import com.example.demo.exception.OrderAlreadyFilledException;
-import com.example.demo.exception.OrderNotFoundException;
-import com.example.demo.exception.TradeNotFoundException;
+import com.example.demo.exception.*;
 import com.example.demo.model.Order;
 import com.example.demo.model.OrderStatus;
 import com.example.demo.model.OrderType;
@@ -83,7 +80,7 @@ public class OrderService {
 
 
     // GET ALL ORDERS
-//    @Cacheable(value = "ordersByUser", key = "#userId")
+    @Cacheable(value = "ordersByUser", key = "#userId")
     public List<Order> getOrdersForUser(Long userId) {
         return orderRepository.findByUserId(userId);
     }
@@ -109,64 +106,99 @@ public class OrderService {
                 .orElseThrow(() -> new TradeNotFoundException(id));
     }
 
-//    // CANCEL ORDER
-//    @Caching(
-//            evict = {
-//                    @CacheEvict(value = "orders", key = "#id"),
-//                    @CacheEvict(value = "allOrders", allEntries = true)
-//            }
-//    )
-//    public Order cancelOrderById(Long id) {
-//
-//        Order o = orderRepository.findById(id)
-//                .orElseThrow(() -> new OrderNotFoundException(id));
-//
-//        switch (o.getStatus()) {
-//
-//            case FILLED ->
-//                    throw new OrderAlreadyFilledException(o.getId());
-//
-//            case CANCELLED ->
-//                    throw new OrderAlreadyCancelledException(o.getId());
-//
-//            case OPEN, PARTIALLY_FILLED ->
-//            { return cancelOpenOrPartial(o); }
-//
-//            default -> {
-//                return o;
-//            }
-//        }
-//    }
-//
-//    private Order cancelOpenOrPartial(Order order) {
-//        orderMatchingEngine.removeOrder(order);
-//        order.setStatus(OrderStatus.CANCELLED);
-//        order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
-//        return orderRepository.save(order);
-//    }
-//
-//
-//    // MODIFY
-//    @Transactional
-//    @Caching(
-//            evict = {
-//                    @CacheEvict(value = "orders", key = "#id"),
-//                    @CacheEvict(value = "allOrders", allEntries = true)
-//            }
-//    )
-//    public Order modifyOrderById(Long id, ModifyOrderRequest req) {
-//
-//        orderRepository.findById(id)
-//                .orElseThrow(() -> new OrderNotFoundException(id));
-//
-//        cancelOrderById(id);
-//
-//        return createOrder(
-//                req.getType(),
-//                req.getPrice(),
-//                req.getQuantity()
-//        );
-//    }
+
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "orders", key = "#id"),
+                    @CacheEvict(value = "allOrders", allEntries = true)
+            }
+    )
+    @Transactional
+    public Order cancelOrderById(Long id, Long currentUserId) {
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+
+        // 🔐 OWNERSHIP CHECK
+        if (!order.getUserId().equals(currentUserId)) {
+            throw new AccessDeniedException(
+                    "You do not own this order"
+            );
+        }
+
+        switch (order.getStatus()) {
+
+            case FILLED ->
+                    throw new OrderAlreadyFilledException(order.getId());
+
+            case CANCELLED ->
+                    throw new OrderAlreadyCancelledException(order.getId());
+
+            case OPEN, PARTIALLY_FILLED -> {
+                return cancelOpenOrPartial(order);
+            }
+
+            default -> {
+                return order;
+            }
+        }
+    }
+
+
+    private Order cancelOpenOrPartial(Order order) {
+        orderMatchingEngine.removeOrder(order);
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "orders", key = "#id"),
+                    @CacheEvict(value = "allOrders", allEntries = true)
+            }
+    )
+    public Order modifyOrderById(Long id, Long currentUserId, ModifyOrderRequest req) {
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+
+        // 🔐 OWNERSHIP CHECK
+        if (!order.getUserId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not own this order");
+        }
+
+        // ❌ Cannot modify terminal states
+        switch (order.getStatus()) {
+            case FILLED ->
+                    throw new OrderAlreadyFilledException(order.getId());
+            case CANCELLED ->
+                    throw new OrderAlreadyCancelledException(order.getId());
+            case OPEN, PARTIALLY_FILLED -> {
+                // allowed
+            }
+            default -> {
+                return order;
+            }
+        }
+
+        // 1️⃣ Cancel existing order (engine + status)
+        orderMatchingEngine.removeOrder(order);
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
+        orderRepository.save(order);
+
+        // 2️⃣ Create new order with SAME userId
+        return createOrder(
+                currentUserId,
+                req.getType(),
+                req.getPrice(),
+                req.getQuantity()
+        );
+    }
+
+
 }
 
 

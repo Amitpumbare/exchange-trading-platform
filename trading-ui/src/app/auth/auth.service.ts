@@ -20,13 +20,11 @@ export class AuthService {
 
   // 🔑 JWT handling
   setToken(token: string) {
-    console.log('SET TOKEN called, key=', this.TOKEN_KEY, 'value=', token);
     localStorage.setItem(this.TOKEN_KEY, token);
   }
 
   getToken(): string | null {
     const token = localStorage.getItem(this.TOKEN_KEY);
-    console.log('GET TOKEN called, key=', this.TOKEN_KEY, 'value=', token);
     return token;
   }
 

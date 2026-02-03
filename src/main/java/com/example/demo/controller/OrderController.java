@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.ModifyOrderRequest;
 import com.example.demo.dto.PlaceOrderRequest;
 import com.example.demo.model.Order;
 import com.example.demo.model.Trade;
@@ -7,6 +8,8 @@ import com.example.demo.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -58,22 +61,29 @@ public class OrderController {
         return orderService.getTradebyId(id);
     }
 
-    // ===============================
-    // CANCEL & MODIFY
-    // Temporarily disabled during JWT rollout
-    // Will be re-enabled with ownership checks
-    // ===============================
+    @PutMapping("/cancel-order/{id}")
+    public Order cancelOrder(@PathVariable long id) {
 
-    // @PutMapping("/cancel-order/{id}")
-    // public Order cancelOrder(@PathVariable long id) {
-    //     return orderService.cancelOrderById(id);
-    // }
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-    // @PutMapping("/modify-order/{id}")
-    // public Order modifyOrder(
-    //         @PathVariable long id,
-    //         @Valid @RequestBody ModifyOrderRequest req
-    // ) {
-    //     return orderService.modifyOrderById(id, req);
-    // }
+        Long userId = (Long) auth.getPrincipal();
+
+        return orderService.cancelOrderById(id, userId);
+    }
+
+    @PutMapping("/modify-order/{id}")
+    public Order modifyOrder(
+            @PathVariable long id,
+            @Valid @RequestBody ModifyOrderRequest req
+    ) {
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Long userId = (Long) auth.getPrincipal();
+
+        return orderService.modifyOrderById(id, userId, req);
+    }
 }

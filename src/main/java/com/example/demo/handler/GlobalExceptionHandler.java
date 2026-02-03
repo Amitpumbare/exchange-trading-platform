@@ -114,5 +114,16 @@ public class GlobalExceptionHandler {
         return  ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiError);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    protected ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex){
+        ApiError apiError = new ApiError(
+                HttpStatus.FORBIDDEN.value(),
+                "Access Denied",
+                List.of(ex.getMessage()),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
+    }
+
 }
 
