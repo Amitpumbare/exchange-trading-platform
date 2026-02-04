@@ -51,14 +51,18 @@ public class OrderMatchingEngine {
     @PostConstruct
     public void loadExistingOrders(){
 
+        // 🔴 MUST clear to avoid duplicates on restart
+        buyBook.clear();
+        sellBook.clear();
+
         List<Order> orders = orderRepository.findByStatusIn(
-                List.of(OrderStatus.OPEN,OrderStatus.PARTIALLY_FILLED)
+                List.of(OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED)
         );
 
-        for (Order o: orders){
-            if(o.getType()==OrderType.BUY){
+        for (Order o : orders){
+            if(o.getType() == OrderType.BUY){
                 buyBook.offer(o);
-            }else{
+            } else {
                 sellBook.offer(o);
             }
         }
@@ -67,10 +71,8 @@ public class OrderMatchingEngine {
                 "Order book initialized -> buys: " + buyBook.size() +
                         ", sells: " + sellBook.size()
         );
-
-
-
     }
+
 
     public void removeOrder(Order order){
         if(order.getType() == OrderType.BUY){
@@ -82,14 +84,23 @@ public class OrderMatchingEngine {
 
     public synchronized void process(Order order) {
 
-        if (order.getType() == OrderType.BUY) {
-            buyBook.offer(order);
-        } else {
-            sellBook.offer(order);
+        // 🚫 Deduplicate first (CRITICAL)
+        buyBook.remove(order);
+        sellBook.remove(order);
+
+        if (order.getStatus() == OrderStatus.OPEN
+                || order.getStatus() == OrderStatus.PARTIALLY_FILLED) {
+
+            if (order.getType() == OrderType.BUY) {
+                buyBook.offer(order);
+            } else {
+                sellBook.offer(order);
+            }
         }
 
         matchOrders();
     }
+
 
     private void matchOrders() {
 
@@ -97,48 +108,56 @@ public class OrderMatchingEngine {
                 && !sellBook.isEmpty()
                 && buyBook.peek().getPrice() >= sellBook.peek().getPrice()) {
 
-            Order buy = buyBook.peek();
-            Order sell = sellBook.peek();
+            // 🔴 REMOVE from heap FIRST
+            Order buy = buyBook.poll();
+            Order sell = sellBook.poll();
 
             long matchedQty = Math.min(buy.getQuantity(), sell.getQuantity());
 
-            updateOrderQuantities(buy, sell, matchedQty);
+            // ---- BUY ----
+            long remainingBuy = buy.getQuantity() - matchedQty;
+            if (remainingBuy == 0) {
+                buy.setQuantity(0);
+                buy.setStatus(OrderStatus.FILLED);
+                buy.setMessage("Order fully executed");
+            } else {
+                buy.setQuantity(remainingBuy);
+                buy.setStatus(OrderStatus.PARTIALLY_FILLED);
+                buy.setMessage("Partially filled. Waiting for remaining quantity");
+            }
 
+            // ---- SELL ----
+            long remainingSell = sell.getQuantity() - matchedQty;
+            if (remainingSell == 0) {
+                sell.setQuantity(0);
+                sell.setStatus(OrderStatus.FILLED);
+                sell.setMessage("Order fully executed");
+            } else {
+                sell.setQuantity(remainingSell);
+                sell.setStatus(OrderStatus.PARTIALLY_FILLED);
+                sell.setMessage("Partially filled. Waiting for remaining quantity");
+            }
+
+            // Trade
             recordTrade(buy, sell, matchedQty);
 
+            // Persist
             orderRepository.save(buy);
             orderRepository.save(sell);
+
+            // 🔁 REINSERT only if still active
+            if (buy.getStatus() == OrderStatus.OPEN
+                    || buy.getStatus() == OrderStatus.PARTIALLY_FILLED) {
+                buyBook.offer(buy);
+            }
+
+            if (sell.getStatus() == OrderStatus.OPEN
+                    || sell.getStatus() == OrderStatus.PARTIALLY_FILLED) {
+                sellBook.offer(sell);
+            }
         }
     }
 
-    private void updateOrderQuantities(Order buy, Order sell, long matchedQty) {
-
-        long remainingBuy = buy.getQuantity() - matchedQty;
-        long remainingSell = sell.getQuantity() - matchedQty;
-
-        if (remainingBuy == 0) {
-            buy.setQuantity(0);
-            buy.setStatus(OrderStatus.FILLED);
-            buy.setMessage("Order fully executed");
-            buyBook.poll();
-        } else {
-            buy.setQuantity(remainingBuy);
-            buy.setStatus(OrderStatus.PARTIALLY_FILLED);
-            buy.setMessage("Partially filled. Waiting for remaining quantity");
-        }
-
-        if (remainingSell == 0) {
-            sell.setQuantity(0);
-            sell.setStatus(OrderStatus.FILLED);
-            sell.setMessage("Order fully executed");
-            sellBook.poll();
-        } else {
-            sell.setQuantity(remainingSell);
-            sell.setStatus(OrderStatus.PARTIALLY_FILLED);
-            sell.setMessage("Partially filled. Waiting for remaining quantity");
-        }
-
-    }
 
     private void recordTrade(Order buy, Order sell, long qty) {
 

@@ -15,10 +15,8 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.time.Instant;
 import java.util.List;
-
 
 @Service
 public class OrderService {
@@ -26,7 +24,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderMatchingEngine orderMatchingEngine;
     private final TradeRepository tradeRepository;
-
 
     public OrderService(OrderRepository orderRepository,
                         OrderMatchingEngine orderMatchingEngine,
@@ -37,12 +34,17 @@ public class OrderService {
         this.tradeRepository = tradeRepository;
     }
 
-    // CREATE ORDER
+    // ================= CREATE ORDER =================
+
     @Transactional
-    @CacheEvict(value = "allOrders", allEntries = true)
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "allOrders", allEntries = true),
+                    @CacheEvict(value = "ordersByUser", key = "#userId")
+            }
+    )
     public Order createOrder(Long userId, OrderType type, double price, long quantity) {
 
-        // 1️⃣ Create order
         Order order = new Order();
         order.setUserId(userId);
         order.setType(type);
@@ -52,21 +54,15 @@ public class OrderService {
         order.setCreatedAt(Instant.now());
         order.setMessage(getDefaultMessage(OrderStatus.OPEN));
 
-        // 2️⃣ Save so it gets an ID
         Order saved = orderRepository.save(order);
 
-        // 3️⃣ Let engine process it (engine updates status + message)
         orderMatchingEngine.process(saved);
 
-        // 4️⃣ Reload from DB to avoid stale Hibernate object
         return orderRepository.findById(saved.getId())
                 .orElseThrow(() -> new OrderNotFoundException(saved.getId()));
     }
 
-
-
-
-
+    // ================= DEFAULT MESSAGE =================
 
     public String getDefaultMessage(OrderStatus status) {
         return switch (status) {
@@ -78,72 +74,64 @@ public class OrderService {
         };
     }
 
+    // ================= GET ORDERS =================
 
-    // GET ALL ORDERS
     @Cacheable(value = "ordersByUser", key = "#userId")
     public List<Order> getOrdersForUser(Long userId) {
         return orderRepository.findByUserId(userId);
     }
 
+    // ================= GET TRADES =================
 
-    // GET ALL TRADES
     @Cacheable(value = "allTrades")
     public List<Trade> getAllTrades() {
         return tradeRepository.findAll();
     }
 
-    // GET ORDER BY ID
     @Cacheable(value = "orders", key = "#id")
     public Order getOrderById(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
     }
 
-    // GET TRADE BY ID
     @Cacheable(value = "trades", key = "#id")
     public Trade getTradebyId(Long id) {
         return tradeRepository.findById(id)
                 .orElseThrow(() -> new TradeNotFoundException(id));
     }
 
+    // ================= CANCEL ORDER =================
 
+    @Transactional
     @Caching(
             evict = {
                     @CacheEvict(value = "orders", key = "#id"),
+                    @CacheEvict(value = "ordersByUser", key = "#currentUserId"),
                     @CacheEvict(value = "allOrders", allEntries = true)
             }
     )
-    @Transactional
     public Order cancelOrderById(Long id, Long currentUserId) {
 
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
 
-        // 🔐 OWNERSHIP CHECK
         if (!order.getUserId().equals(currentUserId)) {
-            throw new AccessDeniedException(
-                    "You do not own this order"
-            );
+            throw new AccessDeniedException("You do not own this order");
         }
 
         switch (order.getStatus()) {
-
             case FILLED ->
                     throw new OrderAlreadyFilledException(order.getId());
-
             case CANCELLED ->
                     throw new OrderAlreadyCancelledException(order.getId());
-
             case OPEN, PARTIALLY_FILLED -> {
                 return cancelOpenOrPartial(order);
             }
-
             default -> {
                 return order;
             }
         }
     }
-
 
     private Order cancelOpenOrPartial(Order order) {
         orderMatchingEngine.removeOrder(order);
@@ -152,10 +140,13 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    // ================= MODIFY ORDER =================
+
     @Transactional
     @Caching(
             evict = {
                     @CacheEvict(value = "orders", key = "#id"),
+                    @CacheEvict(value = "ordersByUser", key = "#currentUserId"),
                     @CacheEvict(value = "allOrders", allEntries = true)
             }
     )
@@ -164,12 +155,10 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
 
-        // 🔐 OWNERSHIP CHECK
         if (!order.getUserId().equals(currentUserId)) {
             throw new AccessDeniedException("You do not own this order");
         }
 
-        // ❌ Cannot modify terminal states
         switch (order.getStatus()) {
             case FILLED ->
                     throw new OrderAlreadyFilledException(order.getId());
@@ -183,13 +172,11 @@ public class OrderService {
             }
         }
 
-        // 1️⃣ Cancel existing order (engine + status)
         orderMatchingEngine.removeOrder(order);
         order.setStatus(OrderStatus.CANCELLED);
         order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
         orderRepository.save(order);
 
-        // 2️⃣ Create new order with SAME userId
         return createOrder(
                 currentUserId,
                 req.getType(),
@@ -197,8 +184,4 @@ public class OrderService {
                 req.getQuantity()
         );
     }
-
-
 }
-
-

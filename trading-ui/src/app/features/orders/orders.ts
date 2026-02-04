@@ -26,6 +26,10 @@ export class OrdersComponent implements OnInit {
   openOrders: Order[] = [];
   history: Order[] = [];
   loading = true;
+  isPlacingOrder = false;
+  isNewOrderMode = false;
+
+
 
   selectedOrder?: Order;
   view: 'OPEN' | 'HISTORY' = 'OPEN';
@@ -48,6 +52,11 @@ export class OrdersComponent implements OnInit {
   loadOrders() {
     this.loading = true;
 
+    // 🔴 force-clear stale state
+    this.orders = [];
+    this.openOrders = [];
+    this.history = [];
+
     this.ordersService.getOrders().subscribe({
       next: (res: Order[]) => {
         this.orders = res;
@@ -61,23 +70,55 @@ export class OrdersComponent implements OnInit {
         );
 
         this.loading = false;
-        this.cd.markForCheck();
+        this.cd.detectChanges(); // 👈 stronger than markForCheck
       },
       error: () => {
         this.loading = false;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       }
     });
   }
 
+
   placeOrder() {
+    if (this.isPlacingOrder) return;
+
+    this.isPlacingOrder = true;
+
     this.ordersService.createOrder(this.ticket).subscribe({
       next: () => {
         this.selectedOrder = undefined;
+        this.isNewOrderMode=false;
+        this.resetTicket();
         this.loadOrders();
+      },
+      error: () => {
+        this.isPlacingOrder = false;
+        this.loadOrders();
+      },
+      complete: () => {
+        this.isPlacingOrder = false;
       }
     });
   }
+
+  resetTicket() {
+    this.ticket = {
+      type: 'BUY',
+      price: 0,
+      quantity: 0
+    };
+  }
+
+  openNewOrderTicket() {
+    this.selectedOrder = undefined;
+    this.isNewOrderMode = true;
+    this.resetTicket();
+  }
+
+
+
+
 
   cancelOrder(orderId: number, event?: MouseEvent) {
     if (event) event.stopPropagation();
@@ -86,9 +127,11 @@ export class OrdersComponent implements OnInit {
     if (!order || order.processing) return;
 
     order.processing = true;
+    this.selectedOrder=undefined;
 
     this.ordersService.cancelOrder(orderId).subscribe({
       next: () => {
+        this.isNewOrderMode=false;
         this.loadOrders();
       },
       error: () => {
@@ -112,6 +155,7 @@ export class OrdersComponent implements OnInit {
     this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
       next: () => {
         this.selectedOrder = undefined;
+        this.isNewOrderMode=false;
         this.loadOrders();
       },
       error: () => order.processing = false
@@ -120,9 +164,11 @@ export class OrdersComponent implements OnInit {
 
 
   selectOrder(order: Order) {
-    // toggle select / deselect
+    this.isNewOrderMode = false;
+
     if (this.selectedOrder?.id === order.id) {
       this.selectedOrder = undefined;
+      this.isNewOrderMode = false;
       return;
     }
 
@@ -131,4 +177,6 @@ export class OrdersComponent implements OnInit {
     this.ticket.price = order.price;
     this.ticket.quantity = order.quantity;
   }
+
+
 }

@@ -13,6 +13,10 @@
   </button>
 </div>
 
+<button class="new-order" (click)="openNewOrderTicket()">
+  + New Order
+</button>
+
 <!-- ================= OPEN ORDERS ================= -->
 <div *ngIf="view === 'OPEN'" class="orders-layout">
 
@@ -44,10 +48,17 @@
         </div>
 
         <div class="order-actions">
-          <button class="cancel" (click)="cancelOrder(item.id!, $event)">
-            Cancel
+          <button
+            class="cancel"
+            [disabled]="item.processing"
+            (click)="cancelOrder(item.id!, $event)">
+            {{ item.processing ? 'Cancelling…' : 'Cancel' }}
           </button>
-          <button class="modify" (click)="modifyOrder(item.id!, $event)">
+
+          <button
+            class="modify"
+            [disabled]="item.processing"
+            (click)="modifyOrder(item.id!, $event)">
             Modify
           </button>
         </div>
@@ -57,21 +68,29 @@
   </div>
 
   <!-- ===== SLIDING TICKET ===== -->
-  <div class="ticket-wrapper" [class.open]="selectedOrder">
+  <div class="ticket-wrapper" [class.open]="selectedOrder || isNewOrderMode">
     <div class="order-ticket">
 
-      <!-- Trading context on its OWN line -->
+      <!-- Trading context -->
       <div
         class="market-context"
         [class.buy]="selectedOrder?.type === 'BUY'"
         [class.sell]="selectedOrder?.type === 'SELL'">
-        Trading against {{ selectedOrder?.type }} {{ selectedOrder?.price }}
+
+        <span *ngIf="selectedOrder">
+          Trading against {{ selectedOrder.type }} {{ selectedOrder.price }}
+        </span>
+
+        <span *ngIf="!selectedOrder">
+          Place New Order
+        </span>
+
       </div>
 
-      <!-- Side comes BELOW -->
       <label>Side</label>
       <select
         [(ngModel)]="ticket.type"
+        [disabled]="isPlacingOrder"
         [ngClass]="{
           buy: ticket.type === 'BUY',
           sell: ticket.type === 'SELL'
@@ -81,13 +100,22 @@
       </select>
 
       <label>Price</label>
-      <input type="number" [(ngModel)]="ticket.price">
+      <input
+        type="number"
+        [(ngModel)]="ticket.price"
+        [disabled]="isPlacingOrder">
 
       <label>Quantity</label>
-      <input type="number" [(ngModel)]="ticket.quantity">
+      <input
+        type="number"
+        [(ngModel)]="ticket.quantity"
+        [disabled]="isPlacingOrder">
 
-      <button class="place" (click)="placeOrder()">
-        Place Order
+      <button
+        class="place"
+        [disabled]="isPlacingOrder"
+        (click)="placeOrder()">
+        {{ isPlacingOrder ? 'Placing…' : 'Place Order' }}
       </button>
 
     </div>
