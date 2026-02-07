@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+
 import jakarta.persistence.*;
 
 @Entity
@@ -19,15 +20,20 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false )
+    private Role role;
+
     // required by JPA
     public User() {
     }
 
-    public User(Long id, String fullName, String email, String password) {
+    public User(Long id, String fullName, String email, String password, Role role) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.password = password;
+        this.role = role;
     }
 
     public Long getId() {
@@ -61,4 +67,8 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public void setRole(Role role){ this.role=role; }
+
+    public Role getRole(){ return role; }
 }

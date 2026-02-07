@@ -163,6 +163,7 @@ export class OrdersComponent implements OnInit {
   }
 
 
+
   selectOrder(order: Order) {
     this.isNewOrderMode = false;
 

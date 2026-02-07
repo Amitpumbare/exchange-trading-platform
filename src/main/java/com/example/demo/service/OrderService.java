@@ -81,17 +81,28 @@ public class OrderService {
         return orderRepository.findByUserId(userId);
     }
 
-    // ================= GET TRADES =================
-
-    @Cacheable(value = "allTrades")
-    public List<Trade> getAllTrades() {
-        return tradeRepository.findAll();
+    @Cacheable(value = "allOrders")
+    public List<Order> getAllOrders(){
+        return  orderRepository.findAll();
     }
+
 
     @Cacheable(value = "orders", key = "#id")
     public Order getOrderById(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
+    }
+
+    // ================= GET TRADES =================
+
+
+    public List<Trade> getTradesForUser(Long userId){
+        return tradeRepository.findByBuyerUserIdOrSellerUserId(userId,userId);
+    }
+
+    @Cacheable(value = "allTrades")
+    public List<Trade> getAllTrades() {
+        return tradeRepository.findAll();
     }
 
     @Cacheable(value = "trades", key = "#id")

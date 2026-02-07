@@ -25,10 +25,12 @@ public class OrderController {
 
     @PostMapping("/place-orders")
     public Order placeOrder(
-            @Valid @RequestBody PlaceOrderRequest placeOrderRequest,
-            HttpServletRequest request
-    ) {
-        Long userId = (Long) request.getAttribute("userId");
+            @Valid @RequestBody PlaceOrderRequest placeOrderRequest) {
+
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+        Long userId = (Long) auth.getPrincipal();
 
         return orderService.createOrder(
                 userId,
@@ -39,16 +41,42 @@ public class OrderController {
     }
 
     @GetMapping("/get-orders")
-    public List<Order> getOrders(HttpServletRequest request) {
-        Object uid = request.getAttribute("userId");
-        System.out.println("🔍 userId from request = " + uid);
-        Long userId = (Long) request.getAttribute("userId");
-        return orderService.getOrdersForUser(userId);
+    public List<Order> getOrders() {
+         Authentication auth= SecurityContextHolder
+                 .getContext()
+                 .getAuthentication();
+
+         Long userId = (Long) auth.getPrincipal();
+
+         boolean isAdmin = auth.getAuthorities()
+                 .stream()
+                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+         if (isAdmin){
+             return orderService.getAllOrders();
+         }else{
+             return orderService.getOrdersForUser(userId);
+         }
     }
 
     @GetMapping("/get-trades")
     public List<Trade> getTrades() {
-        return orderService.getAllTrades();
+
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Long userId = (Long) auth.getPrincipal();
+
+        boolean isAdmin = auth.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if(isAdmin){
+            return orderService.getAllTrades();
+        }else{
+            return orderService.getTradesForUser(userId);
+        }
     }
 
     @GetMapping("/get-orderby-id/{id}")

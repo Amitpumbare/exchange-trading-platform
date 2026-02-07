@@ -15,6 +15,14 @@ public class Trade implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ===== NEW (USERS) =====
+    @Column(nullable = false)
+    private Long buyerUserId;
+
+    @Column(nullable = false)
+    private Long sellerUserId;
+
+    // ===== EXISTING (ORDERS) =====
     @Column(nullable = false)
     private Long buyOrderId;
 
@@ -36,12 +44,16 @@ public class Trade implements Serializable {
     }
 
     public Trade(Long id,
+                 Long buyerUserId,
+                 Long sellerUserId,
                  Long buyOrderId,
                  Long sellOrderId,
                  double price,
                  long quantity,
                  Instant executedAt) {
         this.id = id;
+        this.buyerUserId = buyerUserId;
+        this.sellerUserId = sellerUserId;
         this.buyOrderId = buyOrderId;
         this.sellOrderId = sellOrderId;
         this.price = price;
@@ -57,6 +69,22 @@ public class Trade implements Serializable {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getBuyerUserId() {
+        return buyerUserId;
+    }
+
+    public void setBuyerUserId(Long buyerUserId) {
+        this.buyerUserId = buyerUserId;
+    }
+
+    public Long getSellerUserId() {
+        return sellerUserId;
+    }
+
+    public void setSellerUserId(Long sellerUserId) {
+        this.sellerUserId = sellerUserId;
     }
 
     public Long getBuyOrderId() {

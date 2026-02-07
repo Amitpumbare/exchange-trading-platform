@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.exception.EmailAlreadyExistsException;
 import com.example.demo.exception.InvalidCredentialsException;
 import com.example.demo.exception.UserNotFoundException;
+import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +30,7 @@ public class AuthService {
         user.setFullName(fullName);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
+        user.setRole(Role.USER);
 
         return userRepository.save(user);
     }

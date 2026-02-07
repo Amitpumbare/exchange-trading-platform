@@ -162,6 +162,8 @@ public class OrderMatchingEngine {
     private void recordTrade(Order buy, Order sell, long qty) {
 
         Trade trade = new Trade();
+        trade.setBuyerUserId(buy.getUserId());
+        trade.setSellerUserId(sell.getUserId());
         trade.setBuyOrderId(buy.getId());
         trade.setSellOrderId(sell.getId());
         trade.setPrice(sell.getPrice());
