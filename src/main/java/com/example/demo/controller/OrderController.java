@@ -36,7 +36,8 @@ public class OrderController {
                 userId,
                 placeOrderRequest.getType(),
                 placeOrderRequest.getPrice(),
-                placeOrderRequest.getQuantity()
+                placeOrderRequest.getQuantity(),
+                placeOrderRequest.getInstrumentId()
         );
     }
 

@@ -125,5 +125,37 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
     }
 
+    @ExceptionHandler(InstrumentChangeNotAllowedException.class)
+    protected ResponseEntity<ApiError> handleInstrumentChangeNotAllowed(InstrumentChangeNotAllowedException ex){
+        ApiError apiError = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                "Instrument cannot be changed during order modification",
+                List.of(ex.getMessage()),
+                Instant.now()
+        );
+        return  ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+    }
+
+    @ExceptionHandler(InstrumentHaltedException.class)
+    protected ResponseEntity<ApiError> handleInstrumentHaltException(InstrumentHaltedException ex){
+        ApiError apiError = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                "Instrument is currently on Halt",
+                List.of(ex.getMessage()),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+    }
+
+    @ExceptionHandler(InstrumentNotFoundException.class)
+    protected ResponseEntity<ApiError> handleInstrumentNotFound(InstrumentNotFoundException ex) {
+        ApiError apiError = new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                "Instrument_Not_Found",
+                List.of(ex.getMessage()),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+    }
 }
 

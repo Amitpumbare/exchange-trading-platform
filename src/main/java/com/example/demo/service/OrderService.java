@@ -1,12 +1,11 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.ModifyOrderRequest;
+import com.example.demo.engine.InstrumentEngineRegistry;
 import com.example.demo.engine.OrderMatchingEngine;
 import com.example.demo.exception.*;
-import com.example.demo.model.Order;
-import com.example.demo.model.OrderStatus;
-import com.example.demo.model.OrderType;
-import com.example.demo.model.Trade;
+import com.example.demo.model.*;
+import com.example.demo.repository.InstrumentRepository;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.TradeRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -22,16 +21,31 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderMatchingEngine orderMatchingEngine;
+    private final InstrumentEngineRegistry instrumentEngineRegistry;
     private final TradeRepository tradeRepository;
+    private final InstrumentRepository instrumentRepository;
 
     public OrderService(OrderRepository orderRepository,
-                        OrderMatchingEngine orderMatchingEngine,
-                        TradeRepository tradeRepository) {
+                        InstrumentEngineRegistry instrumentEngineRegistry,
+                        TradeRepository tradeRepository,
+                        InstrumentRepository instrumentRepository) {
 
         this.orderRepository = orderRepository;
-        this.orderMatchingEngine = orderMatchingEngine;
+        this.instrumentEngineRegistry=instrumentEngineRegistry;
         this.tradeRepository = tradeRepository;
+        this.instrumentRepository=instrumentRepository;
+    }
+
+    // ================= Instrument state enforcement (ACTIVE / HALTED) =================
+
+    private void assertInstrumentActive(Long instrumentId){
+        Instrument instrument = instrumentRepository.findById(instrumentId).orElseThrow(
+                () -> new InvalidOrderRequestException("Instrument not Found")
+        );
+
+        if(instrument.getInstrumentStatus() == InstrumentStatus.HALTED){
+            throw new InstrumentHaltedException(instrumentId);
+        }
     }
 
     // ================= CREATE ORDER =================
@@ -43,7 +57,10 @@ public class OrderService {
                     @CacheEvict(value = "ordersByUser", key = "#userId")
             }
     )
-    public Order createOrder(Long userId, OrderType type, double price, long quantity) {
+    public Order createOrder(Long userId, OrderType type, double price, long quantity, Long instrumentId) {
+
+        assertInstrumentActive(instrumentId);
+        OrderMatchingEngine engine = instrumentEngineRegistry.getEngine(instrumentId);
 
         Order order = new Order();
         order.setUserId(userId);
@@ -53,10 +70,11 @@ public class OrderService {
         order.setStatus(OrderStatus.OPEN);
         order.setCreatedAt(Instant.now());
         order.setMessage(getDefaultMessage(OrderStatus.OPEN));
+        order.setInstrumentId(instrumentId);
 
         Order saved = orderRepository.save(order);
 
-        orderMatchingEngine.process(saved);
+        engine.process(saved);
 
         return orderRepository.findById(saved.getId())
                 .orElseThrow(() -> new OrderNotFoundException(saved.getId()));
@@ -145,7 +163,9 @@ public class OrderService {
     }
 
     private Order cancelOpenOrPartial(Order order) {
-        orderMatchingEngine.removeOrder(order);
+
+        OrderMatchingEngine engine = instrumentEngineRegistry.getEngine(order.getInstrumentId());
+        engine.removeOrder(order);
         order.setStatus(OrderStatus.CANCELLED);
         order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
         return orderRepository.save(order);
@@ -183,7 +203,22 @@ public class OrderService {
             }
         }
 
-        orderMatchingEngine.removeOrder(order);
+        // 🔒 Instrument immutability check (MUST be early)
+        if (!req.getInstrumentId().equals(order.getInstrumentId())) {
+            throw new InstrumentChangeNotAllowedException(
+                    "Instrument cannot be changed from "
+                            + order.getInstrumentId()
+                            + " to "
+                            + req.getInstrumentId()
+            );
+        }
+
+        assertInstrumentActive(order.getInstrumentId());
+
+
+        OrderMatchingEngine engine = instrumentEngineRegistry.getEngine(order.getInstrumentId());
+
+        engine.removeOrder(order);
         order.setStatus(OrderStatus.CANCELLED);
         order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
         orderRepository.save(order);
@@ -192,7 +227,9 @@ public class OrderService {
                 currentUserId,
                 req.getType(),
                 req.getPrice(),
-                req.getQuantity()
+                req.getQuantity(),
+                order.getInstrumentId()
+
         );
     }
 }

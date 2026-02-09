@@ -6,31 +6,31 @@ import com.example.demo.model.OrderStatus;
 import com.example.demo.model.Trade;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.TradeRepository;
-import jakarta.annotation.PostConstruct;
-import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import static java.lang.Math.min;
 
-@Component
+
 public class OrderMatchingEngine {
 
+    private final Long instrumentId;
     private final OrderRepository orderRepository;
     private final TradeRepository tradeRepository;
+
 
     private final PriorityQueue<Order> buyBook;
 
     private final PriorityQueue<Order> sellBook;
 
-    public OrderMatchingEngine(OrderRepository orderRepository,
+    public OrderMatchingEngine(Long instrumentId, OrderRepository orderRepository,
                                TradeRepository tradeRepository) {
 
+        this.instrumentId=instrumentId;
         this.orderRepository = orderRepository;
         this.tradeRepository = tradeRepository;
+
 
         this.buyBook = new PriorityQueue<>(
                 (o1, o2) -> {
@@ -46,19 +46,17 @@ public class OrderMatchingEngine {
         this.sellBook = new PriorityQueue<>(
                 Comparator.comparingDouble(Order::getPrice).thenComparing(Order::getCreatedAt)
         );
+
+        loadExistingOrders();
     }
 
-    @PostConstruct
-    public void loadExistingOrders(){
+    private void loadExistingOrders(){
 
         // 🔴 MUST clear to avoid duplicates on restart
         buyBook.clear();
         sellBook.clear();
 
-        List<Order> orders = orderRepository.findByStatusIn(
-                List.of(OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED)
-        );
-
+        List<Order> orders = orderRepository.findByInstrumentIdAndStatusIn(instrumentId, List.of(OrderStatus.PARTIALLY_FILLED, OrderStatus.OPEN));
         for (Order o : orders){
             if(o.getType() == OrderType.BUY){
                 buyBook.offer(o);

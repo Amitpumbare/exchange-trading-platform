@@ -15,15 +15,20 @@ public class ModifyOrderRequest {
     @Positive(message = "Quantity should be greater than 0")
     private long quantity;
 
+    @Positive(message = "InstrumentId must be positive")
+    @NotNull(message = "Instrument is required")
+    private Long instrumentId;
+
 
     // -------- Constructors --------
     public ModifyOrderRequest() {
     }
 
-    public ModifyOrderRequest(OrderType type, double price, long quantity) {
+    public ModifyOrderRequest(OrderType type, double price, long quantity, Long instrumentId) {
         this.type = type;
         this.price = price;
         this.quantity = quantity;
+        this.instrumentId=instrumentId;
     }
 
     // -------- Getters & Setters --------
@@ -50,4 +55,6 @@ public class ModifyOrderRequest {
     public void setQuantity(long quantity) {
         this.quantity = quantity;
     }
+
+    public Long getInstrumentId() { return instrumentId; }
 }

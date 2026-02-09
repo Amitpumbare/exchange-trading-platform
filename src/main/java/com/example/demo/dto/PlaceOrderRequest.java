@@ -15,15 +15,20 @@ public class PlaceOrderRequest {
     @Positive(message = "Quantity cannot be 0 or less than 0")
     private long quantity;
 
+    @Positive(message = "InstrumentId must be positive")
+    @NotNull(message = "Instrument is required")
+    private Long instrumentId;
+
 
     // -------- Constructors --------
     public PlaceOrderRequest() {
     }
 
-    public PlaceOrderRequest(OrderType type, double price, long quantity) {
+    public PlaceOrderRequest(OrderType type, double price, long quantity, Long instrumentId) {
         this.type = type;
         this.price = price;
         this.quantity = quantity;
+        this.instrumentId=instrumentId;
     }
 
     // -------- Getters & Setters --------
@@ -50,4 +55,11 @@ public class PlaceOrderRequest {
     public void setQuantity(long quantity) {
         this.quantity = quantity;
     }
+
+    public Long getInstrumentId(){ return instrumentId; }
+
+    public void setInstrumentId(Long instrumentId) {
+        this.instrumentId = instrumentId;
+    }
+
 }

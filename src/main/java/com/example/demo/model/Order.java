@@ -45,6 +45,9 @@ public class Order implements Serializable {
     @Column(nullable = false)
     private String message;
 
+    @Column(nullable = false, updatable = false)
+    private Long instrumentId;
+
     // ---------- Constructors ----------
 
     public Order() {
@@ -57,7 +60,8 @@ public class Order implements Serializable {
                  long quantity,
                  OrderStatus status,
                  Instant createdAt,
-                 String message) {
+                 String message,
+                 Long instrumentId) {
         this.id = id;
         this.userId = userId;
         this.type = type;
@@ -66,6 +70,7 @@ public class Order implements Serializable {
         this.status = status;
         this.createdAt = createdAt;
         this.message = message;
+        this.instrumentId=instrumentId;
     }
 
     // ---------- Getters & Setters ----------
@@ -134,6 +139,10 @@ public class Order implements Serializable {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    public Long getInstrumentId(){ return instrumentId; }
+
+    public void setInstrumentId(Long instrumentId) { this.instrumentId = instrumentId; }
 
     @Override
     public boolean equals(Object o) {
