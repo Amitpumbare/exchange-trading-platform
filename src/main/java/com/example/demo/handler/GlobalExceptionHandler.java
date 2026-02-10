@@ -157,5 +157,16 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
+
+    @ExceptionHandler(InstrumentAlreadyExistsException.class)
+    protected ResponseEntity<ApiError> handleInstrumentAlreadyExists(InstrumentAlreadyExistsException ex){
+        ApiError apiError = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                "Instrument already Exists",
+                List.of(ex.getMessage()),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+    }
 }
 

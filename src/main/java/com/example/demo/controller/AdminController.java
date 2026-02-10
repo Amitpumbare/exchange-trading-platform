@@ -1,12 +1,17 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.CreateInstrumentRequest;
 import com.example.demo.exception.InstrumentNotFoundException;
 import com.example.demo.model.Instrument;
 import com.example.demo.model.InstrumentStatus;
 import com.example.demo.model.Order;
 import com.example.demo.model.Trade;
 import com.example.demo.repository.InstrumentRepository;
+import com.example.demo.service.InstrumentService;
 import com.example.demo.service.OrderService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,11 +24,14 @@ public class AdminController {
 
     private final InstrumentRepository instrumentRepository;
     private final OrderService orderService;
+    private final InstrumentService instrumentService;
 
     public AdminController(InstrumentRepository instrumentRepository,
-                           OrderService orderService) {
+                           OrderService orderService,
+                           InstrumentService instrumentService) {
         this.instrumentRepository = instrumentRepository;
         this.orderService = orderService;
+        this.instrumentService=instrumentService;
     }
 
     // ================= INSTRUMENT CONTROL =================
@@ -62,5 +70,21 @@ public class AdminController {
     public List<Trade> getAllTrades() {
         return orderService.getAllTrades();
     }
+
+
+    // ================= ADD NEW INSTRUMENT =================
+
+    @PostMapping("/instruments")
+    public ResponseEntity<Instrument> createInstrument(
+            @Valid @RequestBody CreateInstrumentRequest request
+    ) {
+        Instrument instrument =
+                instrumentService.createInstrument(request.getSymbol());
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(instrument);
+    }
+
 }
 
