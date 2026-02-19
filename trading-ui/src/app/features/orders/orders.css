@@ -15,6 +15,11 @@
   background: #f9fafb;
   cursor: pointer;
   font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.tabs button:hover {
+  background: #eef2ff;
 }
 
 .tabs button.active {
@@ -44,34 +49,106 @@
 .orders-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .order-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 16px;
   cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+.order-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
 }
 
 .order-card.buy {
-  border-left: 4px solid #22c55e;
+  border-left: 3px solid #22c55e;
 }
 
 .order-card.sell {
-  border-left: 4px solid #ef4444;
+  border-left: 3px solid #ef4444;
 }
+
+/* =========================
+   HEADER + STATUS
+   ========================= */
 
 .order-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.type.buy {
+  color: #22c55e;
+}
+
+.type.sell {
+  color: #ef4444;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status.OPEN {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.status.PARTIALLY_FILLED {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.status.FILLED {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status.CANCELLED {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .order-message {
   font-size: 12px;
   color: #64748b;
+  margin-top: 4px;
+}
+
+/* =========================
+   VALUE ROW
+   ========================= */
+
+.value-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+/* =========================
+   NUMERIC
+   ========================= */
+
+.numeric {
+  font-family: monospace;
+  text-align: right;
+  font-weight: 600;
 }
 
 /* =========================
@@ -81,16 +158,17 @@
 .order-actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .order-actions button {
   flex: 1;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 8px;
+  border-radius: 8px;
   border: none;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 button.cancel {
@@ -110,18 +188,33 @@ button.modify {
 .ticket-wrapper {
   width: 0;
   overflow: hidden;
-  transition: width 0.3s ease;
+  transition: width 0.25s ease;
 }
 
 .ticket-wrapper.open {
-  width: 300px;
+  width: 270px;   /* Smaller width */
 }
 
 .order-ticket {
   background: #0f172a;
   color: #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 16px;   /* Reduced padding */
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
+   MARKET HEADER
+   ========================= */
+
+.market-context {
+  margin-bottom: 14px;
+  font-weight: 700;
+  font-size: 13px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1e293b;
 }
 
 .market-context.buy {
@@ -133,203 +226,137 @@ button.modify {
 }
 
 /* =========================
-   TICKET INPUTS
+   FORM CONTROLS
    ========================= */
+
+.order-ticket label {
+  font-size: 11px;
+  margin-bottom: 4px;
+  margin-top: 12px;
+  color: #94a3b8;
+}
 
 .order-ticket input,
 .order-ticket select {
   width: 100%;
-  padding: 8px;
+  height: 36px;       /* Smaller height */
+  padding: 0 10px;
   background: #020617;
   border: 1px solid #1e293b;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #f8fafc;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
-/* REMOVE NUMBER ARROWS */
-.order-ticket input[type="number"]::-webkit-inner-spin-button,
-.order-ticket input[type="number"]::-webkit-outer-spin-button {
+.order-ticket input:focus,
+.order-ticket select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* BUY / SELL border color */
+.order-ticket select.buy {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.order-ticket select.sell {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* REMOVE NUMBER ARROWS COMPLETELY */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.order-ticket input[type="number"] {
+input[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* =========================
-   PLACE BUTTON
+   CTA BUTTON
    ========================= */
 
 .order-ticket button.place {
-  margin-top: 14px;
-  width: 100%;
-  padding: 10px;
-  background: #22c55e;
+  margin-top: 18px;
+  height: 38px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 700;
+  font-size: 13px;
   color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
- /* ===== Trading context ===== */
 
- .market-context {
-   margin-bottom: 12px;
-   font-weight: 700;
- }
+.order-ticket button.place:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(34, 197, 94, 0.35);
+}
 
- .market-context.buy {
-   color: #22c55e;
- }
+/* =========================
+   DISABLED STATES
+   ========================= */
 
- .market-context.sell {
-   color: #ef4444;
- }
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
- /* ===== Ticket select coloring ===== */
+.order-ticket input:disabled,
+.order-ticket select:disabled {
+  opacity: 0.6;
+}
 
- .order-ticket select.buy {
-   color: #22c55e;
-   border-color: #22c55e;
- }
+/* =========================
+   EMPTY STATE
+   ========================= */
 
- .order-ticket select.sell {
-   color: #ef4444;
-   border-color: #ef4444;
- }
+.empty {
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #475569;
+  font-weight: 600;
+}
 
- /* Option colors (supported browsers) */
- .order-ticket option.buy {
-   color: #22c55e;
- }
+/* =========================
+   NEW ORDER BUTTON
+   ========================= */
 
- .order-ticket option.sell {
-   color: #ef4444;
- }
+button.new-order {
+  margin-bottom: 16px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
 
- /* =========================
-    DISABLED / PROCESSING STATES
-    ========================= */
+button.new-order:hover {
+  background: #1d4ed8;
+}
 
- /* Disabled buttons (Place / Cancel / Modify) */
- button:disabled {
-   opacity: 0.6;
-   cursor: not-allowed;
- }
+/* =========================
+   RESPONSIVE
+   ========================= */
 
- /* Disabled inputs inside ticket */
- .order-ticket input:disabled,
- .order-ticket select:disabled {
-   opacity: 0.6;
-   cursor: not-allowed;
- }
+@media (max-width: 900px) {
+  .orders-layout {
+    grid-template-columns: 1fr;
+  }
 
- /* Place button while processing */
- .order-ticket button.place:disabled {
-   background: #16a34a; /* slightly darker green */
- }
-
- /* Cancel / Modify disabled look */
- .order-actions button:disabled {
-   opacity: 0.5;
-   cursor: not-allowed;
- }
-
- /* =========================
-    EMPTY STATE (NO ORDERS)
-    ========================= */
-
- .empty {
-   margin-top: 24px;
-   padding: 24px;
-   border-radius: 12px;
-   background: #f8fafc;
-   border: 1px dashed #cbd5e1;
-   color: #475569;
-   font-weight: 600;
- }
-
- /* =========================
-    NEW ORDER BUTTON
-    ========================= */
-
- button.new-order {
-   margin-bottom: 16px;
-   padding: 8px 14px;
-   border-radius: 8px;
-   border: 1px solid #2563eb;
-   background: #2563eb;
-   color: white;
-   font-weight: 600;
-   cursor: pointer;
- }
-
- button.new-order:hover {
-   background: #1d4ed8;
- }
-
- /* =========================
-    SLIDING TICKET POLISH
-    ========================= */
-
- .ticket-wrapper.open {
-   width: 320px; /* slightly wider */
- }
-
- .order-ticket {
-   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35);
- }
-
- /* Ticket title spacing */
- .market-context {
-   padding-bottom: 10px;
-   border-bottom: 1px solid #1e293b;
- }
-
- /* =========================
-    FORM SPACING
-    ========================= */
-
- .order-ticket label {
-   display: block;
-   margin-top: 12px;
-   margin-bottom: 4px;
-   font-size: 13px;
-   color: #cbd5f5;
- }
-
- .order-ticket input,
- .order-ticket select {
-   margin-bottom: 6px;
- }
-
- /* =========================
-    PLACE ORDER BUTTON (CTA)
-    ========================= */
-
- .order-ticket button.place {
-   margin-top: 18px;
-   font-size: 15px;
-   letter-spacing: 0.3px;
- }
-
- /* =========================
-    RESPONSIVE SAFETY
-    ========================= */
-
- @media (max-width: 900px) {
-   .orders-layout {
-     grid-template-columns: 1fr;
-   }
-
-   .ticket-wrapper.open {
-     width: 100%;
-   }
- }
-
-
-
-
-
-
-
+  .ticket-wrapper.open {
+    width: 100%;
+  }
+}

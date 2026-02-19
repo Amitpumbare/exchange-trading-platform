@@ -18,23 +18,25 @@ export class JwtInterceptor implements HttpInterceptor {
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
 
-    // 🔍 Debug log (keep for now, remove later)
-    console.log('JWT INTERCEPTOR CALLED');
+    console.log('JWT INTERCEPTOR CALLED:', req.url);
+
+    // 🚫 Skip token for auth endpoints
+    if (req.url.includes('/api/auth/')) {
+      return next.handle(req);
+    }
+
 
     const token = this.authService.getToken();
 
-    // 🔐 Attach JWT if present
     if (token) {
       const authReq = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
         }
       });
-
       return next.handle(authReq);
     }
 
-    // 🚫 No token → forward original request
     return next.handle(req);
   }
 }

@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.model.Instrument;
 import com.example.demo.service.InstrumentService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class InstrumentController {
      * Used by frontend to show market list
      */
     @GetMapping("/get-instruments")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public List<Instrument> getAllInstruments() {
         return instrumentService.getAllInstruments();
     }

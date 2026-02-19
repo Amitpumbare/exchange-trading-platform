@@ -1,16 +1,39 @@
 <div class="dashboard">
+
   <div class="header">
     <div>
       <p class="welcome-text">
         Welcome back, <strong>{{ userName }}</strong>
       </p>
-
-
     </div>
 
-    <button class="logout-btn" (click)="onLogout()">Logout</button>
+    <button class="logout-btn" (click)="onLogout()">
+      Logout
+    </button>
   </div>
 
+  <!-- ===== INSTRUMENT SELECTOR ===== -->
+  <div class="instrument-bar">
+
+    <label>Instrument:</label>
+
+    <select
+      class="instrument-dropdown"
+      (change)="onInstrumentChange($event)">
+
+      <option
+        *ngFor="let inst of instruments"
+        [value]="inst.id">
+
+        {{ inst.symbol }}
+
+      </option>
+
+    </select>
+
+  </div>
+
+  <!-- ===== NAV ===== -->
   <div class="nav">
     <button routerLink="orders">Orders</button>
     <button routerLink="trades">Trades</button>
@@ -19,4 +42,5 @@
   <div class="content">
     <router-outlet></router-outlet>
   </div>
+
 </div>

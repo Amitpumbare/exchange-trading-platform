@@ -6,6 +6,7 @@ import com.example.demo.model.Order;
 import com.example.demo.model.Trade;
 import com.example.demo.service.OrderService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
+@PreAuthorize("hasAnyRole('USER','ADMIN')")
 public class OrderController {
 
     private final OrderService orderService;
@@ -81,11 +83,13 @@ public class OrderController {
     }
 
     @GetMapping("/get-orderby-id/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Order getOrderById(@PathVariable long id) {
         return orderService.getOrderById(id);
     }
 
     @GetMapping("/get-tradeby-id/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Trade getTradeById(@PathVariable long id) {
         return orderService.getTradebyId(id);
     }

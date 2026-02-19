@@ -24,6 +24,7 @@
     <h2>Open Orders</h2>
 
     <div *ngIf="loading" class="loading">Loading…</div>
+
     <div *ngIf="!loading && openOrders.length === 0" class="empty">
       No open orders
     </div>
@@ -37,13 +38,34 @@
         (click)="selectOrder(item)">
 
         <div class="order-header">
-          <span class="type">{{ item.type }}</span>
-          <span class="status">{{ item.status }}</span>
+          <span class="type"
+                [ngClass]="{
+                  buy: item.type === 'BUY',
+                  sell: item.type === 'SELL'
+                }">
+            {{ item.type }}
+          </span>
+          <span class="status" [ngClass]="item.status">
+            {{ item.status }}
+          </span>
         </div>
 
         <div class="order-body">
-          <p><strong>Price:</strong> {{ item.price }}</p>
-          <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+
+          <div class="value-row">
+            <span>Price</span>
+            <span class="numeric">
+              {{ item.price | number:'1.0-2' }}
+            </span>
+          </div>
+
+          <div class="value-row">
+            <span>Quantity</span>
+            <span class="numeric">
+              {{ item.quantity | number:'1.0-2' }}
+            </span>
+          </div>
+
           <p class="order-message">{{ item.message }}</p>
         </div>
 
@@ -71,14 +93,16 @@
   <div class="ticket-wrapper" [class.open]="selectedOrder || isNewOrderMode">
     <div class="order-ticket">
 
-      <!-- Trading context -->
       <div
         class="market-context"
-        [class.buy]="selectedOrder?.type === 'BUY'"
-        [class.sell]="selectedOrder?.type === 'SELL'">
+        [class.buy]="ticket.type === 'BUY'"
+        [class.sell]="ticket.type === 'SELL'">
 
         <span *ngIf="selectedOrder">
-          Trading against {{ selectedOrder.type }} {{ selectedOrder.price }}
+          Trading against {{ selectedOrder.type }}
+          <span class="numeric">
+            {{ selectedOrder.price | number:'1.0-2' }}
+          </span>
         </span>
 
         <span *ngIf="!selectedOrder">
@@ -95,25 +119,27 @@
           buy: ticket.type === 'BUY',
           sell: ticket.type === 'SELL'
         }">
-        <option value="BUY" class="buy">BUY</option>
-        <option value="SELL" class="sell">SELL</option>
+        <option value="BUY">BUY</option>
+        <option value="SELL">SELL</option>
       </select>
 
       <label>Price</label>
       <input
         type="number"
+        class="numeric"
         [(ngModel)]="ticket.price"
         [disabled]="isPlacingOrder">
 
       <label>Quantity</label>
       <input
         type="number"
+        class="numeric"
         [(ngModel)]="ticket.quantity"
         [disabled]="isPlacingOrder">
 
       <button
         class="place"
-        [disabled]="isPlacingOrder"
+        [disabled]="isPlacingOrder || isInstrumentHalted"
         (click)="placeOrder()">
         {{ isPlacingOrder ? 'Placing…' : 'Place Order' }}
       </button>
@@ -135,14 +161,36 @@
         [class.sell]="item.type === 'SELL'">
 
         <div class="order-header">
-          <span class="type">{{ item.type }}</span>
-          <span class="status">{{ item.status }}</span>
+          <span class="type"
+                [ngClass]="{
+                  buy: item.type === 'BUY',
+                  sell: item.type === 'SELL'
+                }">
+            {{ item.type }}
+          </span>
+          <span class="status" [ngClass]="item.status">
+            {{ item.status }}
+          </span>
         </div>
 
         <div class="order-body">
-          <p><strong>Price:</strong> {{ item.price }}</p>
-          <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+
+          <div class="value-row">
+            <span>Price</span>
+            <span class="numeric">
+              {{ item.price | number:'1.0-2' }}
+            </span>
+          </div>
+
+          <div class="value-row">
+            <span>Quantity</span>
+            <span class="numeric">
+              {{ item.quantity | number:'1.0-2' }}
+            </span>
+          </div>
+
           <p class="order-message">{{ item.message }}</p>
+
         </div>
 
       </div>

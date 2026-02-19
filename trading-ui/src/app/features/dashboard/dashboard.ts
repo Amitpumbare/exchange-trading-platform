@@ -2,6 +2,9 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { InstrumentService } from '../../core/instrument.service';
+import { ChangeDetectorRef } from '@angular/core';
+
 
 @Component({
   selector: 'app-dashboard',
@@ -13,14 +16,43 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 export class DashboardComponent {
 
   userName = '';
+  instruments: any[] = [];
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private instrumentService: InstrumentService,
+    private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
+
     this.userName = localStorage.getItem('userName') || '';
+
+    this.instrumentService.loadInstruments()
+      .subscribe(inst => {
+
+        this.instruments = inst;
+
+        if (inst.length > 0) {
+          this.instrumentService.setInstrument(inst[0]);
+        }
+
+        this.cd.detectChanges();
+      });
+  }
+
+  onInstrumentChange(event: any) {
+
+    const selectedId = +event.target.value;
+
+    const inst = this.instruments.find(
+      i => i.id === selectedId
+    );
+
+    if(inst){
+      this.instrumentService.setInstrument(inst);
+    }
   }
 
   onLogout() {
@@ -29,4 +61,3 @@ export class DashboardComponent {
     this.router.navigate(['/login']);
   }
 }
-

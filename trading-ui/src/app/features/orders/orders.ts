@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrdersService } from './orders.service';
 import { FormsModule } from '@angular/forms';
+import { InstrumentService } from '../../core/instrument.service';
 
 interface Order {
   id?: number;
@@ -28,8 +29,7 @@ export class OrdersComponent implements OnInit {
   loading = true;
   isPlacingOrder = false;
   isNewOrderMode = false;
-
-
+  isInstrumentHalted = false;
 
   selectedOrder?: Order;
   view: 'OPEN' | 'HISTORY' = 'OPEN';
@@ -42,23 +42,33 @@ export class OrdersComponent implements OnInit {
 
   constructor(
     private ordersService: OrdersService,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private instrumentService: InstrumentService
   ) {}
 
   ngOnInit(): void {
-    this.loadOrders();
+
+    this.instrumentService.selectedInstrument$
+      .subscribe(inst => {
+
+        if(inst){
+          this.isInstrumentHalted = inst.halted;
+          this.loadOrders();   // auto refresh on switch
+        }
+
+      });
   }
 
   loadOrders() {
-    this.loading = true;
 
-    // 🔴 force-clear stale state
+    this.loading = true;
     this.orders = [];
     this.openOrders = [];
     this.history = [];
 
     this.ordersService.getOrders().subscribe({
       next: (res: Order[]) => {
+
         this.orders = res;
 
         this.openOrders = res.filter(
@@ -70,7 +80,7 @@ export class OrdersComponent implements OnInit {
         );
 
         this.loading = false;
-        this.cd.detectChanges(); // 👈 stronger than markForCheck
+        this.cd.detectChanges();
       },
       error: () => {
         this.loading = false;
@@ -79,9 +89,9 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-
   placeOrder() {
-    if (this.isPlacingOrder) return;
+
+    if (this.isPlacingOrder || this.isInstrumentHalted) return;
 
     this.isPlacingOrder = true;
 
@@ -116,11 +126,8 @@ export class OrdersComponent implements OnInit {
     this.resetTicket();
   }
 
-
-
-
-
   cancelOrder(orderId: number, event?: MouseEvent) {
+
     if (event) event.stopPropagation();
 
     const order = this.openOrders.find(o => o.id === orderId);
@@ -141,8 +148,8 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-
   modifyOrder(orderId: number, event?: MouseEvent) {
+
     if (event) event.stopPropagation();
 
     if (!this.selectedOrder || this.selectedOrder.id !== orderId) return;
@@ -162,14 +169,12 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-
-
   selectOrder(order: Order) {
+
     this.isNewOrderMode = false;
 
     if (this.selectedOrder?.id === order.id) {
       this.selectedOrder = undefined;
-      this.isNewOrderMode = false;
       return;
     }
 
@@ -178,6 +183,4 @@ export class OrdersComponent implements OnInit {
     this.ticket.price = order.price;
     this.ticket.quantity = order.quantity;
   }
-
-
 }

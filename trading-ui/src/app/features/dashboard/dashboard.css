@@ -105,4 +105,44 @@
   border-radius: 8px;
   min-height: 200px;
 }
+/* ===== INSTRUMENT BAR ===== */
+
+.instrument-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  width: fit-content;
+}
+
+.instrument-bar label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.instrument-dropdown {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #dcdcdc;
+  font-size: 14px;
+  cursor: pointer;
+  background: #f9f9f9;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.instrument-dropdown:hover {
+  border-color: #3498db;
+}
+
+.instrument-dropdown:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 3px rgba(52,152,219,0.5);
+}
+
 
