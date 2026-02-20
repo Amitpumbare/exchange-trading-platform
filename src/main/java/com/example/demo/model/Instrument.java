@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -25,6 +26,9 @@ public class Instrument {
     @Column(nullable = false)
     private InstrumentStatus instrumentStatus;
 
+    @Column(nullable = false, updatable = false, unique = true)
+    private UUID publicId;
+
     protected Instrument() {
         // JPA only
     }
@@ -46,7 +50,16 @@ public class Instrument {
         return instrumentStatus;
     }
 
-    public void setInstrumentStatus(InstrumentStatus instrumentStatus) {
-        this.instrumentStatus = instrumentStatus;
+    public void setInstrumentStatus(InstrumentStatus instrumentStatus) { this.instrumentStatus = instrumentStatus; }
+
+    @PrePersist
+    public  void generatePublicId(){
+        if( publicId == null){
+            publicId = UUID.randomUUID();
+        }
+    }
+
+    public UUID getPublicId() {
+        return publicId;
     }
 }

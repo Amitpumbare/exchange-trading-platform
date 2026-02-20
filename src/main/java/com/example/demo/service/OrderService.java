@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class OrderService {
@@ -31,17 +32,14 @@ public class OrderService {
                         InstrumentRepository instrumentRepository) {
 
         this.orderRepository = orderRepository;
-        this.instrumentEngineRegistry=instrumentEngineRegistry;
+        this.instrumentEngineRegistry = instrumentEngineRegistry;
         this.tradeRepository = tradeRepository;
-        this.instrumentRepository=instrumentRepository;
+        this.instrumentRepository = instrumentRepository;
     }
 
-    // ================= Instrument state enforcement (ACTIVE / HALTED) =================
-
     private void assertInstrumentActive(Long instrumentId){
-        Instrument instrument = instrumentRepository.findById(instrumentId).orElseThrow(
-                () -> new InvalidOrderRequestException("Instrument not Found")
-        );
+        Instrument instrument = instrumentRepository.findById(instrumentId)
+                .orElseThrow(() -> new InvalidOrderRequestException("Instrument not Found"));
 
         if(instrument.getInstrumentStatus() == InstrumentStatus.HALTED){
             throw new InstrumentHaltedException(instrumentId);
@@ -57,7 +55,13 @@ public class OrderService {
                     @CacheEvict(value = "ordersByUser", key = "#userId")
             }
     )
-    public Order createOrder(Long userId, OrderType type, double price, long quantity, Long instrumentId) {
+    public Order createOrder(Long userId, OrderType type, double price, long quantity, UUID instrumentPublicId) {
+
+        Instrument instrument = instrumentRepository
+                .findByPublicId(instrumentPublicId)
+                .orElseThrow(() -> new InvalidOrderRequestException("Instrument not found"));
+
+        Long instrumentId = instrument.getId();
 
         assertInstrumentActive(instrumentId);
         OrderMatchingEngine engine = instrumentEngineRegistry.getEngine(instrumentId);
@@ -80,19 +84,14 @@ public class OrderService {
                 .orElseThrow(() -> new OrderNotFoundException(saved.getId()));
     }
 
-    // ================= DEFAULT MESSAGE =================
-
     public String getDefaultMessage(OrderStatus status) {
         return switch (status) {
             case OPEN -> "Waiting for opposite orders at requested price";
             case PARTIALLY_FILLED -> "Partially filled. Waiting for remaining quantity";
             case FILLED -> "Order fully executed";
             case CANCELLED -> "Order cancelled by user";
-            default -> "Unknown state";
         };
     }
-
-    // ================= GET ORDERS =================
 
     @Cacheable(value = "ordersByUser", key = "#userId")
     public List<Order> getOrdersForUser(Long userId) {
@@ -101,18 +100,14 @@ public class OrderService {
 
     @Cacheable(value = "allOrders")
     public List<Order> getAllOrders(){
-        return  orderRepository.findAll();
+        return orderRepository.findAll();
     }
-
 
     @Cacheable(value = "orders", key = "#id")
     public Order getOrderById(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
     }
-
-    // ================= GET TRADES =================
-
 
     public List<Trade> getTradesForUser(Long userId){
         return tradeRepository.findByBuyerUserIdOrSellerUserId(userId,userId);
@@ -149,10 +144,8 @@ public class OrderService {
         }
 
         switch (order.getStatus()) {
-            case FILLED ->
-                    throw new OrderAlreadyFilledException(order.getId());
-            case CANCELLED ->
-                    throw new OrderAlreadyCancelledException(order.getId());
+            case FILLED -> throw new OrderAlreadyFilledException(order.getId());
+            case CANCELLED -> throw new OrderAlreadyCancelledException(order.getId());
             case OPEN, PARTIALLY_FILLED -> {
                 return cancelOpenOrPartial(order);
             }
@@ -190,31 +183,22 @@ public class OrderService {
             throw new AccessDeniedException("You do not own this order");
         }
 
-        switch (order.getStatus()) {
-            case FILLED ->
-                    throw new OrderAlreadyFilledException(order.getId());
-            case CANCELLED ->
-                    throw new OrderAlreadyCancelledException(order.getId());
-            case OPEN, PARTIALLY_FILLED -> {
-                // allowed
-            }
-            default -> {
-                return order;
-            }
-        }
+        Instrument instrument = instrumentRepository
+                .findByPublicId(req.getInstrumentId())
+                .orElseThrow(() -> new InvalidOrderRequestException("Instrument not found"));
 
-        // 🔒 Instrument immutability check (MUST be early)
-        if (!req.getInstrumentId().equals(order.getInstrumentId())) {
+        Long instrumentId = instrument.getId();
+
+        if (!instrumentId.equals(order.getInstrumentId())) {
             throw new InstrumentChangeNotAllowedException(
                     "Instrument cannot be changed from "
                             + order.getInstrumentId()
                             + " to "
-                            + req.getInstrumentId()
+                            + instrumentId
             );
         }
 
-        assertInstrumentActive(order.getInstrumentId());
-
+        assertInstrumentActive(instrumentId);
 
         OrderMatchingEngine engine = instrumentEngineRegistry.getEngine(order.getInstrumentId());
 
@@ -228,8 +212,7 @@ public class OrderService {
                 req.getType(),
                 req.getPrice(),
                 req.getQuantity(),
-                order.getInstrumentId()
-
+                req.getInstrumentId()
         );
     }
 }

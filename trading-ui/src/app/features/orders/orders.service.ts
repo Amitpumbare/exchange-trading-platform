@@ -26,7 +26,7 @@ export class OrdersService {
     }
 
     const finalPayload = {
-      instrumentId: inst.id,
+      instrumentId: inst.instrumentId,
       type: payload.type,
       price: payload.price,
       quantity: payload.quantity
@@ -48,7 +48,7 @@ export class OrdersService {
     }
 
     const finalPayload = {
-      instrumentId: inst.id,
+      instrumentId: inst.instrumentId,
       type: payload.type,
       price: payload.price,
       quantity: payload.quantity

@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
 
 
 export interface Instrument {
-  id: number;
+  instrumentId: string;
   symbol: string;
   halted: boolean;
 }
@@ -24,19 +24,16 @@ export class InstrumentService {
   constructor(private http: HttpClient) {}
 
   loadInstruments() {
-
     return this.http.get<any[]>(
       'http://localhost:8081/instruments/get-instruments'
     ).pipe(
-
       map(list =>
         list.map(inst => ({
-          id: inst.id,
+          instrumentId: inst.instrumentId,
           symbol: inst.symbol,
           halted: inst.instrumentStatus === 'HALTED'
         }))
       )
-
     );
   }
 

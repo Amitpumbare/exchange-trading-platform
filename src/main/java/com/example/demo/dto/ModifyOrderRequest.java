@@ -3,10 +3,11 @@ package com.example.demo.dto;
 import com.example.demo.model.OrderType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import java.util.UUID;
 
 public class ModifyOrderRequest {
 
-    @NotNull(message = "Ordes should have an type")
+    @NotNull(message = "Order should have a type")
     private OrderType type;
 
     @Positive(message = "Price should be greater than 0")
@@ -15,20 +16,18 @@ public class ModifyOrderRequest {
     @Positive(message = "Quantity should be greater than 0")
     private long quantity;
 
-    @Positive(message = "InstrumentId must be positive")
     @NotNull(message = "Instrument is required")
-    private Long instrumentId;
-
+    private UUID instrumentId;
 
     // -------- Constructors --------
     public ModifyOrderRequest() {
     }
 
-    public ModifyOrderRequest(OrderType type, double price, long quantity, Long instrumentId) {
+    public ModifyOrderRequest(OrderType type, double price, long quantity, UUID instrumentId) {
         this.type = type;
         this.price = price;
         this.quantity = quantity;
-        this.instrumentId=instrumentId;
+        this.instrumentId = instrumentId;
     }
 
     // -------- Getters & Setters --------
@@ -56,5 +55,11 @@ public class ModifyOrderRequest {
         this.quantity = quantity;
     }
 
-    public Long getInstrumentId() { return instrumentId; }
+    public UUID getInstrumentId() {
+        return instrumentId;
+    }
+
+    public void setInstrumentId(UUID instrumentId) {
+        this.instrumentId = instrumentId;
+    }
 }

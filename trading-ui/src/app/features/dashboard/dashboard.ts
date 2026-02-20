@@ -44,10 +44,10 @@ export class DashboardComponent {
 
   onInstrumentChange(event: any) {
 
-    const selectedId = +event.target.value;
+    const selectedId = event.target.value;
 
     const inst = this.instruments.find(
-      i => i.id === selectedId
+      i => i.instrumentId === selectedId
     );
 
     if(inst){
