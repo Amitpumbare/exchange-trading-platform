@@ -2,9 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
-import { InstrumentService } from '../../core/instrument.service';
+import { InstrumentService, Instrument } from '../../core/instrument.service';
 import { ChangeDetectorRef } from '@angular/core';
-
 
 @Component({
   selector: 'app-dashboard',
@@ -16,7 +15,12 @@ import { ChangeDetectorRef } from '@angular/core';
 export class DashboardComponent {
 
   userName = '';
-  instruments: any[] = [];
+
+  instruments: Instrument[] = [];
+
+  selectedInstrument: Instrument | null = null;
+
+  dropdownOpen = false;
 
   constructor(
     private authService: AuthService,
@@ -35,29 +39,42 @@ export class DashboardComponent {
         this.instruments = inst;
 
         if (inst.length > 0) {
+
+          this.selectedInstrument = inst[0];
+
           this.instrumentService.setInstrument(inst[0]);
+
         }
 
         this.cd.detectChanges();
+
       });
   }
 
-  onInstrumentChange(event: any) {
+  toggleDropdown() {
 
-    const selectedId = event.target.value;
+    this.dropdownOpen = !this.dropdownOpen;
 
-    const inst = this.instruments.find(
-      i => i.instrumentId === selectedId
-    );
+  }
 
-    if(inst){
-      this.instrumentService.setInstrument(inst);
-    }
+  selectInstrument(inst: Instrument) {
+
+    this.selectedInstrument = inst;
+
+    this.instrumentService.setInstrument(inst);
+
+    this.dropdownOpen = false;
+
   }
 
   onLogout() {
+
     this.authService.logout();
+
     localStorage.removeItem('userName');
+
     this.router.navigate(['/login']);
+
   }
+
 }

@@ -25,7 +25,6 @@ export class JwtInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-
     const token = this.authService.getToken();
 
     if (token) {

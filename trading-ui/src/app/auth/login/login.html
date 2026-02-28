@@ -1,39 +1,47 @@
+<div class="auth-background">
 
+  <form [formGroup]="loginForm"
+        (ngSubmit)="onSubmit()"
+        autocomplete="off">
 
-<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <h2>Login</h2>
 
-  <h2>Login</h2>
+    <!-- Email -->
+    <label>Email:</label>
+    <input
+      type="text"
+      formControlName="email"
+      placeholder="Enter your email"
+      autocomplete="off"
+    >
 
-  <!-- Email -->
-  <label>Email:</label>
-  <input type="text" formControlName="email">
+    <span class="error"
+          *ngIf="email?.invalid && (email?.touched || email?.dirty)">
+      Enter a valid email
+    </span>
 
-  <span class="error"
-        *ngIf="email?.invalid && (email?.touched || email?.dirty)">
-    Enter a valid email
-  </span>
+    <!-- Password -->
+    <label>Password:</label>
+    <input
+      type="password"
+      formControlName="password"
+      placeholder="Enter your password"
+      autocomplete="new-password"
+    >
 
-  <br><br>
+    <span class="error"
+          *ngIf="password?.invalid && (password?.touched || password?.dirty)">
+      Password must be 8+ chars
+    </span>
 
-  <!-- Password -->
-  <label>Password:</label>
-  <input type="password" formControlName="password">
+    <!-- Remember -->
+    <label class="remember">
+      <input type="checkbox" formControlName="rememberMe">
+      Remember my email
+    </label>
 
-  <span class="error"
-        *ngIf="password?.invalid && (password?.touched || password?.dirty)">
-    Password must be 8+ chars, include uppercase, lowercase, number and symbol
-  </span>
+    <button type="submit">Login</button>
 
-  <br><br>
+  </form>
 
-  <!-- Remember -->
-  <label>
-    <input type="checkbox" formControlName="rememberMe">
-    Remember my email
-  </label>
-
-  <br><br>
-
-  <button type="submit">Login</button>
-
-</form>
+</div>

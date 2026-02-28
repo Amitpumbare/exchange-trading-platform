@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { TradesService } from './trades.service';
 
 interface Trade {
-  buyOrderId: number;
-  sellOrderId: number;
+  instrumentSymbol: string;
+  side: 'BUY' | 'SELL';
   price: number;
   quantity: number;
   executedAt: string;
@@ -32,13 +32,14 @@ export class TradesComponent implements OnInit {
   }
 
   loadTrades() {
+
     this.loading = true;
 
     this.tradesService.getTrades().subscribe({
-      next: (res) => {
-        console.log('Trades API:', res);
+      next: (res: Trade[]) => {
 
         this.trades = res;
+
         this.loading = false;
         this.cd.markForCheck();
       },
@@ -49,4 +50,5 @@ export class TradesComponent implements OnInit {
       }
     });
   }
+
 }

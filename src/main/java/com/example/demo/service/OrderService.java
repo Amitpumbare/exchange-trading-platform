@@ -1,6 +1,8 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.ModifyOrderRequest;
+import com.example.demo.dto.OrderResponse;
+import com.example.demo.dto.TradeResponse;
 import com.example.demo.engine.InstrumentEngineRegistry;
 import com.example.demo.engine.OrderMatchingEngine;
 import com.example.demo.exception.*;
@@ -29,7 +31,8 @@ public class OrderService {
     public OrderService(OrderRepository orderRepository,
                         InstrumentEngineRegistry instrumentEngineRegistry,
                         TradeRepository tradeRepository,
-                        InstrumentRepository instrumentRepository) {
+                        InstrumentRepository instrumentRepository)
+    {
 
         this.orderRepository = orderRepository;
         this.instrumentEngineRegistry = instrumentEngineRegistry;
@@ -94,13 +97,18 @@ public class OrderService {
     }
 
     @Cacheable(value = "ordersByUser", key = "#userId")
-    public List<Order> getOrdersForUser(Long userId) {
-        return orderRepository.findByUserId(userId);
+    public List<OrderResponse> getOrderResponsesForUser(Long userId) {
+
+        return orderRepository.findOrderResponsesForUser(userId);
+
     }
 
+
     @Cacheable(value = "allOrders")
-    public List<Order> getAllOrders(){
-        return orderRepository.findAll();
+    public List<OrderResponse> getAllOrderResponses() {
+
+        return orderRepository.findAllOrderResponses();
+
     }
 
     @Cacheable(value = "orders", key = "#id")
@@ -109,13 +117,17 @@ public class OrderService {
                 .orElseThrow(() -> new OrderNotFoundException(id));
     }
 
-    public List<Trade> getTradesForUser(Long userId){
-        return tradeRepository.findByBuyerUserIdOrSellerUserId(userId,userId);
+    public List<TradeResponse> getTradesForUser(Long userId) {
+
+        return tradeRepository.findTradeResponsesForUser(userId);
+
     }
 
     @Cacheable(value = "allTrades")
-    public List<Trade> getAllTrades() {
-        return tradeRepository.findAll();
+    public List<TradeResponse> getAllTrades() {
+
+        return tradeRepository.findAllTradeResponses();
+
     }
 
     @Cacheable(value = "trades", key = "#id")
