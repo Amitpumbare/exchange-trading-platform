@@ -2,7 +2,6 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 
-import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
@@ -14,9 +13,8 @@ import java.time.Instant;
                 @Index(name = "idx_order_user", columnList = "user_id")
         }
 )
-public class Order implements Serializable {
+public class Order{
 
-    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

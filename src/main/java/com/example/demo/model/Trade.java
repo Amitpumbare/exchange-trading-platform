@@ -2,14 +2,11 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 
-import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
 @Table(name = "trades")
-public class Trade implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class Trade{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

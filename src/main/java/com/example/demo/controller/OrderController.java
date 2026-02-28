@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ModifyOrderRequest;
+import com.example.demo.dto.OrderResponse;
 import com.example.demo.dto.PlaceOrderRequest;
+import com.example.demo.dto.TradeResponse;
 import com.example.demo.model.Order;
 import com.example.demo.model.Trade;
 import com.example.demo.service.OrderService;
@@ -43,26 +45,28 @@ public class OrderController {
     }
 
     @GetMapping("/get-orders")
-    public List<Order> getOrders() {
-         Authentication auth= SecurityContextHolder
-                 .getContext()
-                 .getAuthentication();
+    public List<OrderResponse> getOrders() {
 
-         Long userId = (Long) auth.getPrincipal();
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-         boolean isAdmin = auth.getAuthorities()
-                 .stream()
-                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        Long userId = (Long) auth.getPrincipal();
 
-         if (isAdmin){
-             return orderService.getAllOrders();
-         }else{
-             return orderService.getOrdersForUser(userId);
-         }
+        boolean isAdmin = auth.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            return orderService.getAllOrderResponses();
+        } else {
+            return orderService.getOrderResponsesForUser(userId);
+        }
+
     }
 
     @GetMapping("/get-trades")
-    public List<Trade> getTrades() {
+    public List<TradeResponse> getTrades() {
 
         Authentication auth = SecurityContextHolder
                 .getContext()

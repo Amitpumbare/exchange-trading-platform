@@ -43,6 +43,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = claims.get("userId", Long.class);
                 String role = claims.get("role", String.class);
 
+                System.out.println("JWT userId = " + userId);
+                System.out.println("JWT role = " + role);
+
                 List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_"+role));
 
 

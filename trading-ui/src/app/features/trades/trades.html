@@ -1,29 +1,50 @@
-<h2>Trade History</h2>
+<div class="trades-book">
 
-<div *ngIf="loading" class="loading">Loading trades...</div>
+  <h2>Trade History</h2>
 
-<div *ngIf="!loading" class="trades-grid">
+  <div class="trades-grid">
 
-  <div class="trade-card" *ngFor="let t of trades">
+    <div
+      class="trade-card"
+      *ngFor="let trade of trades"
+      [class.buy]="trade.side === 'BUY'"
+      [class.sell]="trade.side === 'SELL'">
 
-    <div class="trade-header">
-      <div class="side buy">BUY #{{ t.buyOrderId }}</div>
-      <div class="side sell">SELL #{{ t.sellOrderId }}</div>
-    </div>
+      <div class="trade-header">
 
-    <div class="trade-body">
-      <div>
-        <span class="label">Price</span>
-        <span class="value">{{ t.price }}</span>
+        <span
+          class="type"
+          [ngClass]="{
+            buy: trade.side === 'BUY',
+            sell: trade.side === 'SELL'
+          }">
+
+          {{ trade.instrumentSymbol }} {{ trade.side }}
+
+        </span>
+
       </div>
 
-      <div>
-        <span class="label">Quantity</span>
-        <span class="value">{{ t.quantity }}</span>
-      </div>
+      <div class="trade-body">
 
-      <div class="trade-time">
-        {{ t.executedAt | date:'short' }}
+        <div>
+          <span class="label">Price</span>
+          <span class="value">
+            {{ trade.price }}
+          </span>
+        </div>
+
+        <div>
+          <span class="label">Quantity</span>
+          <span class="value">
+            {{ trade.quantity }}
+          </span>
+        </div>
+
+        <p class="trade-time">
+          {{ trade.executedAt | date:'short' }}
+        </p>
+
       </div>
 
     </div>

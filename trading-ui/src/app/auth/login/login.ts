@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../auth.service';
 import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-login',
@@ -15,7 +16,8 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private toastr: ToastrService
   ) {}
 
   loginForm = new FormGroup({
@@ -39,6 +41,7 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit() {
+
     if (!this.loginForm.valid) {
       return;
     }
@@ -52,24 +55,29 @@ export class LoginComponent implements OnInit {
 
     this.auth.login(payload).subscribe({
       next: (res: any) => {
+
         // 🔑 Store JWT token
         this.auth.setToken(res.token);
-
-        // after successful login
         localStorage.setItem('userName', res.fullName);
 
+        // 🔥 FIX RACE CONDITION
+        Promise.resolve().then(() => {
 
-        // Navigate to dashboard
-        this.router.navigate(['/dashboard']);
+          this.router.navigate(['/dashboard']).then(() => {
 
-        alert('Login successful');
+            this.toastr.success('Login Successful');
+
+          });
+
+        });
+
       },
       error: () => {
-        alert('Invalid email or password');
+        this.toastr.error('Invalid email or password');
       }
     });
 
-    // Remember-me logic (email only)
+    // Remember-me logic
     if (rememberMe && email) {
       localStorage.setItem('loginEmail', email);
       localStorage.setItem('rememberMe', 'true');

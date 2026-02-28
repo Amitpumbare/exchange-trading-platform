@@ -1,44 +1,75 @@
 <div class="dashboard">
 
+  <!-- HEADER -->
   <div class="header">
-    <div>
-      <p class="welcome-text">
-        Welcome back, <strong>{{ userName }}</strong>
-      </p>
-    </div>
+    <p class="welcome-text">
+      Welcome back, <strong>{{ userName }}</strong>
+    </p>
 
     <button class="logout-btn" (click)="onLogout()">
       Logout
     </button>
   </div>
 
-  <!-- ===== INSTRUMENT SELECTOR ===== -->
+  <!-- INSTRUMENT -->
   <div class="instrument-bar">
 
-    <label>Instrument:</label>
+    <label>Instrument</label>
 
-    <select
-      class="instrument-dropdown"
-      (change)="onInstrumentChange($event)">
+    <div class="instrument-dropdown-container">
 
-      <option
-        *ngFor="let inst of instruments"
-        [value]="inst.instrumentId">
+      <div
+        class="instrument-selected"
+        (click)="toggleDropdown()">
 
-        {{ inst.symbol }}
+        {{ selectedInstrument?.symbol || 'Select' }}
 
-      </option>
+        <span
+          class="status-badge"
+          [class.active]="selectedInstrument && !selectedInstrument.halted"
+          [class.halted]="selectedInstrument?.halted">
 
-    </select>
+          {{ selectedInstrument?.halted ? 'HALTED' : 'ACTIVE' }}
+
+        </span>
+
+      </div>
+
+      <div
+        class="instrument-menu"
+        *ngIf="dropdownOpen">
+
+        <div
+          class="instrument-item"
+          *ngFor="let inst of instruments"
+          (click)="selectInstrument(inst)">
+
+          {{ inst.symbol }}
+
+          <span
+            class="status-badge"
+            [class.active]="!inst.halted"
+            [class.halted]="inst.halted">
+
+            {{ inst.halted ? 'HALTED' : 'ACTIVE' }}
+
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
 
   </div>
 
-  <!-- ===== NAV ===== -->
-  <div class="nav">
+  <!-- NAV -->
+  <div class="dashboard-nav">
     <button routerLink="orders">Orders</button>
     <button routerLink="trades">Trades</button>
   </div>
 
+  <!-- CONTENT -->
   <div class="content">
     <router-outlet></router-outlet>
   </div>

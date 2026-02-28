@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.CreateInstrumentRequest;
+import com.example.demo.dto.OrderResponse;
+import com.example.demo.dto.TradeResponse;
 import com.example.demo.exception.InstrumentNotFoundException;
 import com.example.demo.model.Instrument;
 import com.example.demo.model.InstrumentStatus;
@@ -62,12 +64,12 @@ public class AdminController {
     }
 
     @GetMapping("/orders")
-    public List<Order> getAllOrders() {
-        return orderService.getAllOrders();
+    public List<OrderResponse> getAllOrders() {
+        return orderService.getAllOrderResponses();
     }
 
     @GetMapping("/trades")
-    public List<Trade> getAllTrades() {
+    public List<TradeResponse> getAllTrades() {
         return orderService.getAllTrades();
     }
 

@@ -40,7 +40,14 @@ export class InstrumentService {
 
 
   setInstrument(inst: Instrument) {
-    this.selectedInstrumentSubject.next(inst);
+
+    // emit NEW object reference to guarantee change detection
+    this.selectedInstrumentSubject.next({
+      instrumentId: inst.instrumentId,
+      symbol: inst.symbol,
+      halted: inst.halted
+    });
+
   }
 
   getInstrument(): Instrument | null {

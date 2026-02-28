@@ -1,51 +1,47 @@
-<h2>Create Account</h2>
+<div class="auth-background">
 
-<form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+  <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
 
-  <!-- Full Name -->
-  <label>Full Name</label>
-  <input type="text" formControlName="fullName" />
-  <span class="error"
-        *ngIf="fullName?.invalid && (fullName?.touched || fullName?.dirty)">
-    Name is required (min 3 characters)
-  </span>
+    <h2>Create Account</h2>
 
-  <!-- Email -->
-  <label>Email</label>
-  <input type="text" formControlName="email" />
-  <span class="error"
-        *ngIf="email?.invalid && (email?.touched || email?.dirty)">
-    Enter a valid email
-  </span>
+    <!-- Full Name -->
+    <label>Full Name</label>
+    <input type="text" formControlName="fullName" placeholder="Enter full name"/>
 
-  <!-- Password -->
-  <label>Password</label>
-  <input type="password" formControlName="password" />
-  <span class="error"
-        *ngIf="password?.invalid && (password?.touched || password?.dirty)">
-    Must be 8+ chars with uppercase, lowercase, number & symbol
-  </span>
+    <span class="error"
+          *ngIf="fullName?.invalid && (fullName?.touched || fullName?.dirty)">
+      Name is required (min 3 characters)
+    </span>
 
-  <!-- Confirm Password -->
-  <label>Confirm Password</label>
-  <input type="password" formControlName="confirmPassword" />
+    <!-- Email -->
+    <label>Email</label>
+    <input type="text" formControlName="email" placeholder="Enter email"/>
 
-  <!-- confirm required -->
-  <span class="error"
-        *ngIf="confirmPassword?.errors?.['required'] && (confirmPassword?.touched || confirmPassword?.dirty)">
-    Please confirm your password
-  </span>
+    <span class="error"
+          *ngIf="email?.invalid && (email?.touched || email?.dirty)">
+      Enter a valid email
+    </span>
 
-  <!-- passwords mismatch -->
-  <span class="error"
-        *ngIf="signupForm.errors?.['passwordMismatch'] && (confirmPassword?.touched || confirmPassword?.dirty)">
-    Passwords do not match
-  </span>
+    <!-- Password -->
+    <label>Password</label>
+    <input type="password" formControlName="password" placeholder="Enter password"/>
 
-  <button type="submit">Create Account</button>
+    <span class="error"
+          *ngIf="password?.invalid && (password?.touched || password?.dirty)">
+      Must be 8+ chars with uppercase, lowercase, number & symbol
+    </span>
 
-  <a class="link" routerLink="/login">
-    Already have an account? Login
-  </a>
+    <!-- Confirm Password -->
+    <label>Confirm Password</label>
+    <input type="password" formControlName="confirmPassword" placeholder="Confirm password"/>
 
-</form>
+    <span class="error"
+          *ngIf="signupForm.errors?.['passwordMismatch'] && (confirmPassword?.touched || confirmPassword?.dirty)">
+      Passwords do not match
+    </span>
+
+    <button type="submit">Create Account</button>
+
+  </form>
+
+</div>
