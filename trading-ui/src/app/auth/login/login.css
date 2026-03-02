@@ -1,90 +1,214 @@
 /* LOGIN CARD */
 form {
+
   width: 420px;
+
   padding: 40px;
 
   background: rgba(120,120,120,0.18);
+
   backdrop-filter: blur(18px);
 
   border-radius: 14px;
 
   box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+
   border: 1px solid rgba(255,255,255,0.25);
 
   box-sizing: border-box;
+
 }
+
 
 /* HEADING */
 h2 {
+
   text-align: center;
+
   color: #ffffff;
+
   margin-bottom: 25px;
+
 }
+
 
 /* LABELS */
 label {
+
   display: block;
+
   font-weight: 500;
+
   margin-bottom: 5px;
+
   color: #f3f4f6;
+
 }
 
-/* INPUTS (EMAIL + PASSWORD SAME STYLE) */
+
+/* INPUTS */
 input[type="text"],
 input[type="password"] {
+
   width: 100%;
+
   padding: 12px;
 
   border-radius: 6px;
+
   border: 1px solid rgba(255,255,255,0.25);
 
   background: rgba(0,0,0,0.35);
+
   color: white;
 
   outline: none;
+
   box-sizing: border-box;
+
 }
 
-/* 🔥 CHROME AUTOFILL FIX */
+
+/* CHROME AUTOFILL FIX */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px rgba(0,0,0,0.35) inset;
+
+  -webkit-box-shadow:
+    0 0 0px 1000px rgba(0,0,0,0.35) inset;
+
   -webkit-text-fill-color: white;
+
 }
 
-/* REMEMBER */
-.remember {
+
+/* REMEMBER + FORGOT ROW */
+.remember-row {
+
   display: flex;
+
+  justify-content: space-between;
+
   align-items: center;
-  gap: 5px;
-  color: #f3f4f6;
-  margin-top: 10px;
+
+  margin-top: 12px;
+
+  width: 100%;
+
 }
+
+
+/* REMEMBER CHECKBOX */
+.remember {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  color: #f3f4f6;
+
+  margin-bottom: 0;   /* FIX: prevents label from covering link */
+
+}
+
+
+/* FORGOT LINK */
+.forgot-link {
+
+  font-size: 13px;
+
+  color: #7dd3fc;
+
+  text-decoration: none;
+
+  cursor: pointer;    /* FIX: ensures clickable cursor */
+
+  position: relative; /* FIX: ensures clickable layer */
+
+  z-index: 5;         /* FIX: prevents overlap blocking */
+
+}
+
+.forgot-link:hover {
+
+  text-decoration: underline;
+
+}
+
 
 /* BUTTON */
 button {
+
   width: 100%;
+
   padding: 12px;
+
   margin-top: 20px;
 
-  background: linear-gradient(135deg,#00c6ff,#0072ff);
+  background:
+    linear-gradient(135deg,#00c6ff,#0072ff);
+
   border: none;
+
   border-radius: 6px;
 
   color: white;
+
   font-size: 16px;
+
   cursor: pointer;
 
   box-sizing: border-box;
+
 }
 
 button:hover {
+
   transform: scale(1.02);
+
 }
 
-/* ERROR */
+
+/* ERROR TEXT */
 span.error {
+
   font-size: 12px;
+
   color: #ffb3b3;
+
+}
+
+.remember input {
+
+  cursor: pointer;
+
+}
+
+/* AUTH SECONDARY LINK (Back to login, signup, etc.) */
+.auth-link {
+
+  display: block;
+
+  text-align: center;
+
+  margin-top: 18px;
+
+  font-size: 14px;
+
+  color: #7dd3fc;
+
+  text-decoration: none;
+
+  transition: 0.2s ease;
+
+}
+
+.auth-link:hover {
+
+  color: #38bdf8;
+
+  text-decoration: underline;
+
 }
