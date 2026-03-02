@@ -10,6 +10,7 @@ import com.example.demo.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.demo.service.EmailService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -35,6 +36,7 @@ public class PasswordResetService {
     }
 
     // STEP 1: User requests forgot password
+    @Transactional
     public void createResetToken(String email) {
 
         User user = userRepository.findByEmail(email)
