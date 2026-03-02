@@ -9,6 +9,7 @@ import com.example.demo.repository.PasswordResetTokenRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.demo.service.EmailService;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -20,14 +21,17 @@ public class PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public PasswordResetService(UserRepository userRepository,
                                 PasswordResetTokenRepository tokenRepository,
-                                PasswordEncoder passwordEncoder) {
+                                PasswordEncoder passwordEncoder,
+                                EmailService emailService) {
 
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService=emailService;
     }
 
     // STEP 1: User requests forgot password
@@ -50,10 +54,10 @@ public class PasswordResetService {
 
         tokenRepository.save(resetToken);
 
-        // DEV MODE: print link instead of sending email
-        System.out.println(
-                "RESET LINK: http://localhost:4200/reset-password?token=" + token
-        );
+        String resetLink =
+                "http://localhost:4200/reset-password?token=" + token;
+
+        emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
     }
 
     // STEP 2: User submits new password
