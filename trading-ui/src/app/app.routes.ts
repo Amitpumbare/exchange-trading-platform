@@ -7,22 +7,52 @@ import { TradesComponent } from './features/trades/trades';
 import { AuthGuard } from './auth/auth.guard';
 import { GuestGuard } from './auth/guest.guard';
 
-
 export const routes: Routes = [
+
+  // Default → login
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 
-  // 🚫 Logged-in users cannot access these
+  // AUTH PAGES
   { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
+
   { path: 'signup', component: SignupComponent, canActivate: [GuestGuard] },
 
-  // 🔐 Logged-out users cannot access this
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./auth/forgot-password/forgot-password')
+        .then(m => m.ForgotPasswordComponent),
+    canActivate: [GuestGuard]
+  },
+
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./auth/reset-password/reset-password')
+        .then(m => m.ResetPasswordComponent),
+    canActivate: [GuestGuard]
+  },
+
+  // DASHBOARD (protected)
   {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [AuthGuard],
+
     children: [
+
+      // UI improvement:
+      // default dashboard page → orders
+      { path: '', redirectTo: 'orders', pathMatch: 'full' },
+
       { path: 'orders', component: OrdersComponent },
+
       { path: 'trades', component: TradesComponent }
+
     ]
-  }
+  },
+
+  // UI safety fallback
+  { path: '**', redirectTo: 'login' }
+
 ];

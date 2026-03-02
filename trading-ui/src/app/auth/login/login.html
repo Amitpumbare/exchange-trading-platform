@@ -1,46 +1,84 @@
 <div class="auth-background">
 
-  <form [formGroup]="loginForm"
-        (ngSubmit)="onSubmit()"
-        autocomplete="off">
+  <form
+    [formGroup]="loginForm"
+    (ngSubmit)="onSubmit()"
+    autocomplete="off">
 
     <h2>Login</h2>
 
     <!-- Email -->
     <label>Email:</label>
+
     <input
       type="text"
       formControlName="email"
       placeholder="Enter your email"
-      autocomplete="off"
-    >
+      autocomplete="off">
 
-    <span class="error"
-          *ngIf="email?.invalid && (email?.touched || email?.dirty)">
+    <span
+      class="error"
+      *ngIf="email?.invalid && (email?.touched || email?.dirty)">
+
       Enter a valid email
+
     </span>
+
 
     <!-- Password -->
     <label>Password:</label>
+
     <input
       type="password"
       formControlName="password"
       placeholder="Enter your password"
-      autocomplete="new-password"
-    >
+      autocomplete="new-password">
 
-    <span class="error"
-          *ngIf="password?.invalid && (password?.touched || password?.dirty)">
+    <span
+      class="error"
+      *ngIf="password?.invalid && (password?.touched || password?.dirty)">
+
       Password must be 8+ chars
+
     </span>
 
-    <!-- Remember -->
-    <label class="remember">
-      <input type="checkbox" formControlName="rememberMe">
-      Remember my email
-    </label>
 
-    <button type="submit">Login</button>
+    <!-- Remember + Forgot row -->
+    <div class="remember-row">
+
+      <div class="remember">
+
+        <input
+          type="checkbox"
+          id="rememberMe"
+          formControlName="rememberMe">
+
+        <label for="rememberMe">
+
+          Remember my email
+
+        </label>
+
+      </div>
+
+
+      <a
+        class="forgot-link"
+        routerLink="/forgot-password">
+
+        Forgot password?
+
+      </a>
+
+    </div>
+
+
+    <!-- Login button -->
+    <button type="submit">
+
+      Login
+
+    </button>
 
   </form>
 

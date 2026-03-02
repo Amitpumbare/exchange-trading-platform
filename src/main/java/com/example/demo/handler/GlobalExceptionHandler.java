@@ -168,5 +168,27 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
     }
+
+    @ExceptionHandler(InvalidResetTokenException.class)
+    protected ResponseEntity<ApiError> handleInvalidResetToken(InvalidResetTokenException ex){
+        ApiError apiError = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "Token is Invalid",
+                List.of(ex.getMessage()),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+
+    @ExceptionHandler(ResetTokenExpiredException.class)
+    protected ResponseEntity<ApiError> handleResetTokenExpired(ResetTokenExpiredException ex){
+        ApiError apiError = new ApiError(
+                HttpStatus.GONE.value(),
+                "Token is already Expired",
+                List.of(ex.getMessage()),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.GONE).body(apiError);
+    }
 }
 

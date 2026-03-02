@@ -18,6 +18,20 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/login`, payload);
   }
 
+  forgotPassword(payload: { email: string }) {
+    return this.http.post(
+      `${this.baseUrl}/forgot-password`,
+      payload
+    );
+  }
+
+  resetPassword(payload: { token: string, newPassword: string }) {
+    return this.http.post(
+      `${this.baseUrl}/reset-password`,
+      payload
+    );
+  }
+
   // 🔑 JWT handling
   setToken(token: string) {
     localStorage.setItem(this.TOKEN_KEY, token);
