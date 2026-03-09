@@ -63,6 +63,7 @@ public class PasswordResetService {
     }
 
     // STEP 2: User submits new password
+    @Transactional
     public void resetPassword(UUID token, String newPassword) {
 
         PasswordResetToken resetToken =

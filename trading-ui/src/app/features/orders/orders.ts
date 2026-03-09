@@ -1,16 +1,17 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrdersService } from './orders.service';
 import { FormsModule } from '@angular/forms';
 import { InstrumentService, Instrument } from '../../core/instrument.service';
+import { WebSocketService } from '../../core/websocket.service';
 
 interface Order {
   id?: number;
   instrumentSymbol: string;
-  type: string;
+  type: 'BUY' | 'SELL';
   price: number;
   quantity: number;
-  status: string;
+  status: 'OPEN' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELLED';
   message: string;
   processing?: boolean;
 }
@@ -31,16 +32,15 @@ export class OrdersComponent implements OnInit {
   loading = true;
   isPlacingOrder = false;
   isNewOrderMode = false;
-
-  // THIS drives all disable logic
   isInstrumentHalted = false;
 
   selectedOrder?: Order;
+  selectedInstrument?: Instrument;
 
   view: 'OPEN' | 'HISTORY' = 'OPEN';
 
   ticket = {
-    type: 'BUY',
+    type: 'BUY' as 'BUY' | 'SELL',
     price: 0,
     quantity: 0
   };
@@ -48,27 +48,61 @@ export class OrdersComponent implements OnInit {
   constructor(
     private ordersService: OrdersService,
     private cd: ChangeDetectorRef,
-    private instrumentService: InstrumentService
+    private instrumentService: InstrumentService,
+    private websocket: WebSocketService,
+    private zone: NgZone
   ) {}
 
   ngOnInit(): void {
 
-    // subscribe once to instrument context
+    this.loadOrders();
+
+    // WebSocket order events
+    this.websocket.orderEvents$.subscribe((event: Order) => {
+
+      console.log("ORDER EVENT RECEIVED", event);
+
+      this.zone.run(() => {
+
+        const exists = this.orders.some(o => o.id === event.id);
+
+        if (exists) {
+
+          // replace existing order
+          this.orders = this.orders.map(o =>
+            o.id === event.id ? event : o
+          );
+
+        } else {
+
+          // prepend new order
+          this.orders = [event, ...this.orders];
+
+        }
+
+        this.rebuildLists();
+
+        this.cd.detectChanges();
+
+      });
+
+    });
+
+    // Instrument change listener
     this.instrumentService.selectedInstrument$
       .subscribe((inst: Instrument | null) => {
 
         if (!inst) return;
 
-        // update HALT state
+        // avoid reload loop
+        if (this.selectedInstrument?.symbol === inst.symbol) return;
+
+        this.selectedInstrument = inst;
+
         this.isInstrumentHalted = inst.halted;
 
-        // immediately refresh UI bindings
         this.cd.detectChanges();
 
-        // reload orders for new instrument context
-        this.loadOrders();
-
-        // ✅ FIX: force layout recalculation so scroll works immediately
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
         });
@@ -77,14 +111,21 @@ export class OrdersComponent implements OnInit {
 
   }
 
+  rebuildLists() {
+
+    this.openOrders = this.orders.filter(
+      o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+    );
+
+    this.history = this.orders.filter(
+      o => o.status === 'FILLED' || o.status === 'CANCELLED'
+    );
+
+  }
 
   loadOrders() {
 
     this.loading = true;
-
-    this.orders = [];
-    this.openOrders = [];
-    this.history = [];
 
     this.ordersService.getOrders().subscribe({
 
@@ -92,13 +133,7 @@ export class OrdersComponent implements OnInit {
 
         this.orders = res;
 
-        this.openOrders = res.filter(
-          o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
-        );
-
-        this.history = res.filter(
-          o => o.status === 'FILLED' || o.status === 'CANCELLED'
-        );
+        this.rebuildLists();
 
         this.loading = false;
 
@@ -118,10 +153,8 @@ export class OrdersComponent implements OnInit {
 
   }
 
-
   placeOrder() {
 
-    // exchange rule: cannot place during HALT
     if (this.isPlacingOrder || this.isInstrumentHalted) return;
 
     this.isPlacingOrder = true;
@@ -131,12 +164,11 @@ export class OrdersComponent implements OnInit {
       next: () => {
 
         this.selectedOrder = undefined;
-
         this.isNewOrderMode = false;
 
         this.resetTicket();
 
-        this.loadOrders();
+        this.cd.detectChanges();
 
       },
 
@@ -144,20 +176,18 @@ export class OrdersComponent implements OnInit {
 
         this.isPlacingOrder = false;
 
-        this.loadOrders();
-
       },
 
       complete: () => {
 
         this.isPlacingOrder = false;
+        this.cd.detectChanges();
 
       }
 
     });
 
   }
-
 
   resetTicket() {
 
@@ -169,7 +199,6 @@ export class OrdersComponent implements OnInit {
 
   }
 
-
   openNewOrderTicket() {
 
     this.selectedOrder = undefined;
@@ -180,7 +209,6 @@ export class OrdersComponent implements OnInit {
 
   }
 
-
   cancelOrder(orderId: number, event?: MouseEvent) {
 
     if (event) event.stopPropagation();
@@ -189,7 +217,6 @@ export class OrdersComponent implements OnInit {
 
     if (!order || order.processing) return;
 
-    // cancel ALWAYS allowed even when halted
     order.processing = true;
 
     this.selectedOrder = undefined;
@@ -200,15 +227,11 @@ export class OrdersComponent implements OnInit {
 
         this.isNewOrderMode = false;
 
-        this.loadOrders();
-
       },
 
       error: () => {
 
         order.processing = false;
-
-        this.loadOrders();
 
       }
 
@@ -216,12 +239,10 @@ export class OrdersComponent implements OnInit {
 
   }
 
-
   modifyOrder(orderId: number, event?: MouseEvent) {
 
     if (event) event.stopPropagation();
 
-    // exchange rule: cannot modify during HALT
     if (this.isInstrumentHalted) return;
 
     if (!this.selectedOrder || this.selectedOrder.id !== orderId) return;
@@ -237,10 +258,9 @@ export class OrdersComponent implements OnInit {
       next: () => {
 
         this.selectedOrder = undefined;
-
         this.isNewOrderMode = false;
 
-        this.loadOrders();
+        this.cd.detectChanges();
 
       },
 
@@ -249,7 +269,6 @@ export class OrdersComponent implements OnInit {
     });
 
   }
-
 
   selectOrder(order: Order) {
 
@@ -265,13 +284,14 @@ export class OrdersComponent implements OnInit {
 
     this.selectedOrder = order;
 
-    // opposite side logic
     this.ticket.type = order.type === 'BUY' ? 'SELL' : 'BUY';
-
     this.ticket.price = order.price;
-
     this.ticket.quantity = order.quantity;
 
+  }
+
+  trackByOrderId(index: number, order: Order) {
+    return order.id;
   }
 
 }

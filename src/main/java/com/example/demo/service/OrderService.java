@@ -10,6 +10,7 @@ import com.example.demo.model.*;
 import com.example.demo.repository.InstrumentRepository;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.TradeRepository;
+import com.example.demo.websocket.TradingEventPublisher;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -27,26 +28,46 @@ public class OrderService {
     private final InstrumentEngineRegistry instrumentEngineRegistry;
     private final TradeRepository tradeRepository;
     private final InstrumentRepository instrumentRepository;
+    private final TradingEventPublisher tradingEventPublisher;
 
     public OrderService(OrderRepository orderRepository,
                         InstrumentEngineRegistry instrumentEngineRegistry,
                         TradeRepository tradeRepository,
-                        InstrumentRepository instrumentRepository)
-    {
+                        InstrumentRepository instrumentRepository,
+                        TradingEventPublisher tradingEventPublisher) {
 
         this.orderRepository = orderRepository;
         this.instrumentEngineRegistry = instrumentEngineRegistry;
         this.tradeRepository = tradeRepository;
         this.instrumentRepository = instrumentRepository;
+        this.tradingEventPublisher = tradingEventPublisher;
     }
 
-    private void assertInstrumentActive(Long instrumentId){
+    private void assertInstrumentActive(Long instrumentId) {
         Instrument instrument = instrumentRepository.findById(instrumentId)
                 .orElseThrow(() -> new InvalidOrderRequestException("Instrument not Found"));
 
-        if(instrument.getInstrumentStatus() == InstrumentStatus.HALTED){
+        if (instrument.getInstrumentStatus() == InstrumentStatus.HALTED) {
             throw new InstrumentHaltedException(instrumentId);
         }
+    }
+
+    // ================= HELPER =================
+
+    public OrderResponse toOrderResponse(Order order) {
+
+        Instrument instrument = instrumentRepository.findById(order.getInstrumentId())
+                .orElseThrow(() -> new InvalidOrderRequestException("Instrument not found"));
+
+        return new OrderResponse(
+                order.getId(),
+                instrument.getSymbol(),
+                order.getType(),
+                order.getPrice(),
+                order.getQuantity(),
+                order.getStatus(),
+                order.getMessage()
+        );
     }
 
     // ================= CREATE ORDER =================
@@ -83,8 +104,36 @@ public class OrderService {
 
         engine.process(saved);
 
-        return orderRepository.findById(saved.getId())
-                .orElseThrow(() -> new OrderNotFoundException(saved.getId()));
+        List<Trade> trades =
+                tradeRepository.findByBuyOrderIdOrSellOrderId(saved.getId(), saved.getId());
+
+        for (Trade trade : trades) {
+
+            TradeResponse buyerTrade = new TradeResponse(
+                    instrument.getSymbol(),
+                    "BUY",
+                    trade.getPrice(),
+                    trade.getQuantity(),
+                    trade.getExecutedAt()
+            );
+
+            TradeResponse sellerTrade = new TradeResponse(
+                    instrument.getSymbol(),
+                    "SELL",
+                    trade.getPrice(),
+                    trade.getQuantity(),
+                    trade.getExecutedAt()
+            );
+
+            tradingEventPublisher.sendTradeEvent(trade.getBuyerUserId(), buyerTrade);
+            tradingEventPublisher.sendTradeEvent(trade.getSellerUserId(), sellerTrade);
+        }
+
+        Order updated = orderRepository.findById(saved.getId()).orElseThrow();
+
+        tradingEventPublisher.sendOrderEvent(userId, toOrderResponse(updated));
+
+        return updated;
     }
 
     public String getDefaultMessage(OrderStatus status) {
@@ -98,17 +147,12 @@ public class OrderService {
 
     @Cacheable(value = "ordersByUser", key = "#userId")
     public List<OrderResponse> getOrderResponsesForUser(Long userId) {
-
         return orderRepository.findOrderResponsesForUser(userId);
-
     }
-
 
     @Cacheable(value = "allOrders")
     public List<OrderResponse> getAllOrderResponses() {
-
         return orderRepository.findAllOrderResponses();
-
     }
 
     @Cacheable(value = "orders", key = "#id")
@@ -118,16 +162,12 @@ public class OrderService {
     }
 
     public List<TradeResponse> getTradesForUser(Long userId) {
-
         return tradeRepository.findTradeResponsesForUser(userId);
-
     }
 
     @Cacheable(value = "allTrades")
     public List<TradeResponse> getAllTrades() {
-
         return tradeRepository.findAllTradeResponses();
-
     }
 
     @Cacheable(value = "trades", key = "#id")
@@ -170,10 +210,17 @@ public class OrderService {
     private Order cancelOpenOrPartial(Order order) {
 
         OrderMatchingEngine engine = instrumentEngineRegistry.getEngine(order.getInstrumentId());
+
         engine.removeOrder(order);
+
         order.setStatus(OrderStatus.CANCELLED);
         order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
-        return orderRepository.save(order);
+
+        Order cancelled = orderRepository.save(order);
+
+        tradingEventPublisher.sendOrderEvent(order.getUserId(), toOrderResponse(cancelled));
+
+        return cancelled;
     }
 
     // ================= MODIFY ORDER =================
@@ -215,9 +262,13 @@ public class OrderService {
         OrderMatchingEngine engine = instrumentEngineRegistry.getEngine(order.getInstrumentId());
 
         engine.removeOrder(order);
+
         order.setStatus(OrderStatus.CANCELLED);
         order.setMessage(getDefaultMessage(OrderStatus.CANCELLED));
-        orderRepository.save(order);
+
+        Order cancelled = orderRepository.save(order);
+
+        tradingEventPublisher.sendOrderEvent(order.getUserId(), toOrderResponse(cancelled));
 
         return createOrder(
                 currentUserId,

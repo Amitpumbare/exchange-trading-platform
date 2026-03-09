@@ -27,21 +27,24 @@ public class OrderController {
     }
 
     @PostMapping("/place-orders")
-    public Order placeOrder(
+    public OrderResponse placeOrder(
             @Valid @RequestBody PlaceOrderRequest placeOrderRequest) {
 
         Authentication auth = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
+
         Long userId = (Long) auth.getPrincipal();
 
-        return orderService.createOrder(
+        Order order = orderService.createOrder(
                 userId,
                 placeOrderRequest.getType(),
                 placeOrderRequest.getPrice(),
                 placeOrderRequest.getQuantity(),
                 placeOrderRequest.getInstrumentId()
         );
+
+        return orderService.toOrderResponse(order);
     }
 
     @GetMapping("/get-orders")
@@ -62,7 +65,6 @@ public class OrderController {
         } else {
             return orderService.getOrderResponsesForUser(userId);
         }
-
     }
 
     @GetMapping("/get-trades")
@@ -98,7 +100,7 @@ public class OrderController {
     }
 
     @PutMapping("/cancel-order/{id}")
-    public Order cancelOrder(@PathVariable long id) {
+    public OrderResponse cancelOrder(@PathVariable long id) {
 
         Authentication auth = SecurityContextHolder
                 .getContext()
@@ -106,20 +108,25 @@ public class OrderController {
 
         Long userId = (Long) auth.getPrincipal();
 
-        return orderService.cancelOrderById(id, userId);
+        Order cancelled = orderService.cancelOrderById(id, userId);
+
+        return orderService.toOrderResponse(cancelled);
     }
 
     @PutMapping("/modify-order/{id}")
-    public Order modifyOrder(
+    public OrderResponse modifyOrder(
             @PathVariable long id,
             @Valid @RequestBody ModifyOrderRequest req
     ) {
+
         Authentication auth = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
 
         Long userId = (Long) auth.getPrincipal();
 
-        return orderService.modifyOrderById(id, userId, req);
+        Order modified = orderService.modifyOrderById(id, userId, req);
+
+        return orderService.toOrderResponse(modified);
     }
 }

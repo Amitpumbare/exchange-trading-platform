@@ -47,4 +47,6 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     """)
     List<TradeResponse> findAllTradeResponses();
 
+    List<Trade> findByBuyOrderIdOrSellOrderId(Long buyOrderId, Long sellOrderId);
+
 }

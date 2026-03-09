@@ -31,7 +31,6 @@ export class OrdersService {
     private instrumentService: InstrumentService
   ) {}
 
-  // ✅ FIXED
   getOrders(): Observable<OrderResponse[]> {
 
     return this.http.get<OrderResponse[]>(
@@ -40,17 +39,23 @@ export class OrdersService {
 
   }
 
-  createOrder(payload: any): Observable<any> {
+  private getSelectedInstrumentId(): string {
 
     const inst = this.instrumentService.getInstrument();
 
     if (!inst) {
-      throw new Error("instrument not selected");
+      throw new Error('Instrument not selected');
     }
+
+    return inst.instrumentId;
+
+  }
+
+  createOrder(payload: any): Observable<any> {
 
     const finalPayload = {
 
-      instrumentId: inst.instrumentId,
+      instrumentId: this.getSelectedInstrumentId(),
 
       type: payload.type,
 
@@ -78,15 +83,9 @@ export class OrdersService {
 
   modifyOrder(orderId: number, payload: any): Observable<any> {
 
-    const inst = this.instrumentService.getInstrument();
-
-    if (!inst) {
-      throw new Error("instrument not selected");
-    }
-
     const finalPayload = {
 
-      instrumentId: inst.instrumentId,
+      instrumentId: this.getSelectedInstrumentId(),
 
       type: payload.type,
 
