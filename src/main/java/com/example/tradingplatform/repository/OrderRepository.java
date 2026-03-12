@@ -19,7 +19,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // ✅ USER ORDER RESPONSES (JOIN projection)
     @Query("""
-        SELECT new com.example.demo.dto.OrderResponse(
+        SELECT new com.example.tradingplatform.dto.OrderResponse(
             o.id,
             i.symbol,
             o.type,
@@ -38,7 +38,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // ✅ ADMIN ORDER RESPONSES
     @Query("""
-        SELECT new com.example.demo.dto.OrderResponse(
+        SELECT new com.example.tradingplatform.dto.OrderResponse(
             o.id,
             i.symbol,
             o.type,

@@ -11,7 +11,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     // USER trades (user perspective BUY / SELL)
     @Query("""
-        SELECT new com.example.demo.dto.TradeResponse(
+        SELECT new com.example.tradingplatform.dto.TradeResponse(
             i.symbol,
             CASE
                 WHEN t.buyerUserId = :userId THEN 'BUY'
@@ -33,7 +33,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     // ADMIN trades (no perspective)
     @Query("""
-        SELECT new com.example.demo.dto.TradeResponse(
+        SELECT new com.example.tradingplatform.dto.TradeResponse(
             i.symbol,
             'EXECUTED',
             t.price,
