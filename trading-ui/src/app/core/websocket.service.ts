@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { Client } from '@stomp/stompjs';
+import { Injectable, NgZone } from '@angular/core';
+import { Client, StompSubscription } from '@stomp/stompjs';
 import { ReplaySubject } from 'rxjs';
 
 @Injectable({
@@ -11,8 +11,13 @@ export class WebSocketService {
   private subscribed = false;
   private connecting = false;
 
+  private depthSubscription?: StompSubscription;
+
   tradeEvents$ = new ReplaySubject<any>(10);
   orderEvents$ = new ReplaySubject<any>(10);
+  depthEvents$ = new ReplaySubject<any>(10);
+
+  constructor(private zone: NgZone) {}
 
   private getUserIdFromToken(): number | null {
 
@@ -21,8 +26,6 @@ export class WebSocketService {
     if (!token) return null;
 
     const payload = JSON.parse(atob(token.split('.')[1]));
-
-    console.log(payload);
 
     return payload.userId;
   }
@@ -35,14 +38,13 @@ export class WebSocketService {
 
     this.client = undefined;
     this.subscribed = false;
-    this.connecting = false;   // ✅ reset connecting state
+    this.connecting = false;
+
+    this.depthSubscription?.unsubscribe();
   }
 
   connect() {
 
-    console.log("CONNECT CALLED");
-
-    // ✅ Prevent duplicate connect attempts
     if (this.client?.active || this.connecting) {
       return;
     }
@@ -61,49 +63,72 @@ export class WebSocketService {
     };
 
     this.client.onWebSocketClose = () => {
-      console.log("WebSocket connection closed");
-      this.connecting = false; // ✅ allow reconnect
+      this.connecting = false;
     };
 
     this.client.onConnect = () => {
 
       const userId = this.getUserIdFromToken();
 
-      console.log("WebSocket Connected");
-
-      this.connecting = false; // ✅ connection completed
+      this.connecting = false;
 
       if (!userId) {
-        console.error("User ID not found in token");
         return;
       }
 
       if (this.subscribed) return;
       this.subscribed = true;
 
+      // TRADE EVENTS
       this.client?.subscribe(`/topic/trades/${userId}`, message => {
 
         const trade = JSON.parse(message.body);
 
-        console.log("TRADE EVENT", trade);
-
-        this.tradeEvents$.next(trade);
+        this.zone.run(() => {
+          this.tradeEvents$.next(trade);
+        });
 
       });
 
+      // ORDER EVENTS
       this.client?.subscribe(`/topic/orders/${userId}`, message => {
 
         const order = JSON.parse(message.body);
 
-        console.log("ORDER EVENT", order);
-
-        this.orderEvents$.next(order);
+        this.zone.run(() => {
+          this.orderEvents$.next(order);
+        });
 
       });
 
     };
 
     this.client.activate();
+  }
+
+  // DEPTH SUBSCRIPTION
+
+  subscribeDepth(instrumentId: string) {
+
+    if (!this.client || !this.client.active) return;
+
+    this.depthSubscription?.unsubscribe();
+
+    this.depthSubscription =
+      this.client.subscribe(`/topic/depth/${instrumentId}`, message => {
+
+        const depth = JSON.parse(message.body);
+
+        this.zone.run(() => {
+          this.depthEvents$.next(depth);
+        });
+
+      });
+
+  }
+
+  unsubscribeDepth() {
+    this.depthSubscription?.unsubscribe();
   }
 
 }

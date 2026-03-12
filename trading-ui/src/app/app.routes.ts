@@ -4,6 +4,7 @@ import { SignupComponent } from './auth/signup/signup';
 import { DashboardComponent } from './features/dashboard/dashboard';
 import { OrdersComponent } from './features/orders/orders';
 import { TradesComponent } from './features/trades/trades';
+import { MarketDepthComponent } from './features/market-depth/market-depth';
 import { AuthGuard } from './auth/auth.guard';
 import { GuestGuard } from './auth/guest.guard';
 
@@ -41,13 +42,14 @@ export const routes: Routes = [
 
     children: [
 
-      // UI improvement:
       // default dashboard page → orders
       { path: '', redirectTo: 'orders', pathMatch: 'full' },
 
       { path: 'orders', component: OrdersComponent },
 
-      { path: 'trades', component: TradesComponent }
+      { path: 'trades', component: TradesComponent },
+
+      { path: 'depth', component: MarketDepthComponent }
 
     ]
   },

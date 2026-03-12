@@ -1,0 +1,55 @@
+<div class="depth-layout">
+
+  <div class="depth-panel">
+
+    <h2>Market Depth</h2>
+
+    <div *ngIf="loading" class="loading">
+      Loading…
+    </div>
+
+    <div class="depth-table">
+
+      <!-- HEADER -->
+
+      <div class="depth-row header">
+
+        <span>Bid Qty</span>
+
+        <span>Bid Price</span>
+
+        <span>Ask Price</span>
+
+        <span>Ask Qty</span>
+
+      </div>
+
+      <!-- DEPTH ROWS -->
+
+      <div
+        class="depth-row"
+        *ngFor="let level of levels; let i = index">
+
+        <span class="bid-qty">
+          {{ bids[i]?.quantity || '' }}
+        </span>
+
+        <span class="bid-price">
+          {{ bids[i]?.price || '' }}
+        </span>
+
+        <span class="ask-price">
+          {{ asks[i]?.price || '' }}
+        </span>
+
+        <span class="ask-qty">
+          {{ asks[i]?.quantity || '' }}
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
