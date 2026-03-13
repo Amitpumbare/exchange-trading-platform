@@ -1,0 +1,29 @@
+name: Trading Platform CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build Maven project
+        run: mvn -B clean package
+
+      - name: Build Docker image
+        run: docker build -t trading-platform .
