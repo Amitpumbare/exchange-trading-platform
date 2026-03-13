@@ -1,8 +1,8 @@
 # Exchange-Style Trading Platform
 
-A backend-authoritative exchange-style trading platform that replicates real exchange execution behavior with a deterministic in-memory matching engine, secure identity model, and production-grade backend architecture.
+A backend-authoritative exchange-style trading platform that replicates real exchange execution behavior using a deterministic in-memory matching engine, secure identity model, real-time event streaming, and production-grade containerized infrastructure.
 
-Unlike CRUD trading demos, this system implements a true matching engine as the execution authority, ensuring deterministic trade execution, concurrency safety, and immutable order lifecycle management.
+Unlike CRUD trading demos, this system implements a **true matching engine as the execution authority**, ensuring deterministic trade execution, concurrency safety, and immutable order lifecycle management.
 
 ---
 
@@ -10,12 +10,15 @@ Unlike CRUD trading demos, this system implements a true matching engine as the 
 
 The goal of this project is to model real exchange trading behavior, focusing on:
 
-- Deterministic price–time priority order matching
-- Concurrency-safe execution
-- Immutable order lifecycle
-- Instrument-level engine isolation
-- Secure identity model preventing enumeration attacks
-- Backend as the single source of truth
+* Deterministic price–time priority order matching
+* Concurrency-safe execution
+* Immutable order lifecycle
+* Instrument-level engine isolation
+* Secure identity model preventing enumeration attacks
+* Backend as the single source of truth
+* Real-time market event streaming
+* Containerized infrastructure for cloud-ready deployment
+* Automated CI pipeline validation
 
 The frontend acts only as a rendering and intent submission layer while the backend controls all execution logic.
 
@@ -25,25 +28,26 @@ The frontend acts only as a rendering and intent submission layer while the back
 
 ## Backend
 
-- Spring Boot 3
-- PostgreSQL (persistent storage)
-- JPA / Hibernate (persistence layer)
-- In-memory Matching Engine (execution layer)
-- Redis (read caching layer)
-- Spring Security + JWT Authentication
-- Role-Based Access Control (RBAC)
-- Spring Mail (password reset system)
-- DTO-based API architecture
-- AOP logging and monitoring
+* Spring Boot 3
+* PostgreSQL
+* JPA / Hibernate
+* In-memory Matching Engine
+* Redis caching layer
+* Spring Security + JWT authentication
+* Role-Based Access Control (RBAC)
+* Spring Mail password reset system
+* DTO-based API architecture
+* WebSocket + STOMP real-time messaging
+* AOP logging
 
 ## Frontend
 
-- Angular (Standalone Components)
-- Reactive Forms
-- JWT HTTP Interceptor
-- Route Guards
-- Toastr Notifications
-- Execution-aware trading UI
+* Angular (Standalone Components)
+* Reactive Forms
+* JWT HTTP Interceptor
+* Route Guards
+* Toastr notifications
+* Real-time UI updates via WebSockets
 
 The frontend never performs execution logic.
 
@@ -51,29 +55,28 @@ The frontend never performs execution logic.
 
 # Core Architecture Principle
 
-### Backend as Single Source of Truth
+## Backend as Single Source of Truth
 
 Execution lifecycle:
 
-```
 Frontend → submits order intent
 Matching Engine → executes deterministically
 Database → persists execution facts
 Redis → caches read models
-Frontend → displays resulting state
-```
+WebSocket → streams events
+Frontend → renders state
 
-Frontend never:
+The frontend never:
 
-- calculates fills
-- updates order status
-- performs execution logic
+* calculates fills
+* updates order status
+* performs execution logic
 
 This prevents:
 
-- race conditions
-- inconsistent state
-- client-side manipulation
+* race conditions
+* inconsistent order states
+* client-side manipulation
 
 ---
 
@@ -81,58 +84,50 @@ This prevents:
 
 Each instrument has its own isolated matching engine instance.
 
-```
 ConcurrentHashMap<Long, OrderMatchingEngine>
-```
 
 Engines are lazily initialized using:
 
-```
 computeIfAbsent()
-```
 
 Benefits:
 
-- instrument isolation
-- parallel execution
-- horizontal scalability
-- reduced lock contention
+* instrument isolation
+* parallel execution
+* reduced lock contention
+* scalable architecture
 
 ---
 
 # Order Book Data Structure
 
-BUY Orders
+### BUY Orders
 
-- Max Heap (PriorityQueue)
-- Highest price priority
-- FIFO for same price
+* Max Heap (PriorityQueue)
+* Highest price priority
+* FIFO for same price
 
-SELL Orders
+### SELL Orders
 
-- Min Heap (PriorityQueue)
-- Lowest price priority
-- FIFO for same price
+* Min Heap (PriorityQueue)
+* Lowest price priority
+* FIFO for same price
 
-Implements true exchange **price-time priority**.
+This enforces the **price-time priority rule used by real exchanges**.
 
 ---
 
 # Heap Safety Rule
 
-Objects inside a PriorityQueue are never mutated directly.
+Objects inside a PriorityQueue are **never mutated directly**.
 
 Incorrect approach:
 
-```
 modify object inside heap
-```
 
-Correct execution flow:
+Correct lifecycle:
 
-```
 poll → modify → persist → reinsert
-```
 
 This preserves comparator consistency and heap ordering guarantees.
 
@@ -140,77 +135,58 @@ This preserves comparator consistency and heap ordering guarantees.
 
 # Execution Capabilities
 
-Supports:
+The matching engine supports:
 
-- partial fills
-- multi-order matching
-- atomic lifecycle transitions
-- deterministic execution
-- price-time priority enforcement
+* partial fills
+* multi-order matching
+* deterministic execution
+* price-time priority enforcement
+* atomic lifecycle transitions
 
-Example:
+Example execution:
 
-```
 BUY 100 @ 100
 SELL 40 @ 90
 SELL 60 @ 95
-```
 
 Result:
 
-```
 Trade 40
 Trade 60
 BUY order FILLED
-```
 
 ---
 
 # Concurrency Bug Identified and Solved
 
-### Problem
+During development a critical issue was discovered.
 
-Hibernate created different entity instances for the same order.
+Hibernate loads different entity instances for the same database row.
 
 Example:
 
-```
-Heap contains: Order@A
-Hibernate loads: Order@B
-```
+Heap contains → Order@A
+Hibernate loads → Order@B
 
-Since PriorityQueue.remove() uses equals(), removal failed.
+Both represent the same order but have different memory references.
 
-Result:
+Since PriorityQueue.remove() relies on equals(), removal failed.
 
-- ghost orders
-- duplicate execution risk
-- heap corruption
+This caused:
 
-### Solution
+* ghost orders
+* potential duplicate executions
+* heap corruption
 
-ID-based equality override.
+Solution:
 
-```java
-@Override
-public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Order)) return false;
-    Order other = (Order) o;
-    return id != null && id.equals(other.id);
-}
-
-@Override
-public int hashCode() {
-    return id != null ? id.hashCode() : 0;
-}
-```
+Override equality using the database ID.
 
 Result:
 
-- reliable heap removal
-- correct cancel-replace lifecycle
-- concurrency-safe execution
+* reliable heap removal
+* correct cancel-replace lifecycle
+* concurrency-safe order book behavior
 
 ---
 
@@ -220,95 +196,85 @@ Orders are never modified directly.
 
 States:
 
-```
 OPEN
 PARTIALLY_FILLED
 FILLED
 CANCELLED
-```
 
 Modify operation:
 
-```
 Cancel existing order
 Create new order
 Assign new ID
-```
 
 Benefits:
 
-- deterministic execution
-- auditability
-- regulatory-style model
+* deterministic execution
+* auditability
+* regulatory-style order history
 
 ---
 
 # Trades as Execution Facts
 
-Trades represent execution results.
+Trades represent immutable execution outcomes.
 
 Trade entity contains:
 
-- buyOrderId
-- sellOrderId
-- buyerUserId
-- sellerUserId
-- price
-- quantity
-- executedAt
+* buyOrderId
+* sellOrderId
+* buyerUserId
+* sellerUserId
+* price
+* quantity
+* executedAt
+
+Conceptually:
+
+Orders = Intent
+Trades = Execution
 
 Trades never change after creation.
 
-```
-Orders = Intent
-Trades = Execution
-```
-
 ---
 
-# Secure Identity Model (UUID)
+# Secure Identity Model
 
 To prevent IDOR attacks, a dual identity model was implemented.
 
-Instrument entity:
-
-```
-id (Long) → internal execution identity
-publicId (UUID) → external identity
-```
+id (Long) → internal engine routing
+publicId (UUID) → external API identity
 
 Frontend receives only:
 
-- publicId
-- symbol
-- halted status
+* publicId
+* symbol
+* halted status
 
 Backend resolves internally using:
 
-```
 findByPublicId(UUID)
-```
 
 ---
 
-# Authentication and Authorization
+# Authentication & Authorization
 
-JWT-based authentication.
+JWT-based stateless authentication.
 
-JWT contains:
+JWT token contains:
 
-- userId
-- email
-- role
+* userId
+* email
+* role
 
 Roles:
 
-```
 USER
 ADMIN
-```
 
-Enforced using Spring Security with `@PreAuthorize`.
+Authorization enforced using Spring Security with:
+
+@PreAuthorize
 
 Users can access only their own orders and trades.
 
@@ -316,7 +282,7 @@ Users can access only their own orders and trades.
 
 # Password Security
 
-Passwords are stored using BCrypt hashing.
+Passwords stored using BCrypt hashing.
 
 Passwords are never stored in plaintext.
 
@@ -324,156 +290,278 @@ Passwords are never stored in plaintext.
 
 # Secure Password Reset System
 
-Implemented using UUID-based reset tokens.
+Password reset implemented using UUID-based tokens.
 
 Token entity contains:
 
-- UUID token
-- userId
-- expiration timestamp
+* token (UUID)
+* userId
+* expiration timestamp
 
 Flow:
 
-```
 User requests reset
 Token generated
 Stored in DB
-Email sent via SMTP
+Email sent
 User resets password
 Token deleted
-```
+
+Security protections include:
+
+* unguessable UUID tokens
+* expiration limits
+* single-use tokens
 
 ---
 
 # DTO-Based API Layer
 
-Entities are never exposed directly.
+Entities are never exposed directly to clients.
 
-Example DTO:
+Example:
 
-```
-TradeResponse
-```
+TradeResponse DTO
 
-Prevents exposure of internal IDs and relationships.
+Benefits:
+
+* prevents internal ID exposure
+* avoids circular entity relationships
+* improves API performance
 
 ---
 
 # Eliminating N+1 Query Problem
 
-Before:
+Initial implementation caused multiple database queries:
 
-```
 Trade query
-+ Order query per trade
-+ Instrument query per trade
-```
 
-After:
+* Order query per trade
+* Instrument query per trade
 
-```
-Single JPQL projection query
-```
+This was optimized using JPQL DTO projection.
 
 Result:
 
-```
-1 query instead of hundreds
-```
+Single query replaces hundreds of queries.
 
 ---
 
-# Redis Caching
+# Redis Caching Layer
 
-Implemented using:
+Caching implemented using Spring Cache abstraction.
 
-```
+Annotations used:
+
 @Cacheable
 @CacheEvict
-```
 
-Caches:
+Cached data:
 
-- orders
-- trades
+* orders
+* trades
 
 Benefits:
 
-- reduced DB load
-- faster response times
+* reduced database load
+* faster API responses
+* improved scalability
 
 ---
 
-# Security Hardening
+# Real-Time Event Streaming
 
-After GitHub detected exposed SMTP credentials:
+Real-time updates implemented using:
 
-Actions taken:
+Spring WebSocket
+STOMP messaging
 
-- revoked compromised credential
-- removed plaintext secrets
-- externalized secrets using environment variables
+Events streamed:
 
-Configuration now uses:
+/topic/orders/{userId}
+/topic/trades/{userId}
+/topic/depth/{instrumentId}
 
-```
-spring.mail.username=${MAIL_USERNAME}
-spring.mail.password=${MAIL_PASSWORD}
-```
+Execution pipeline:
 
-Repository is now safe to publish.
+Matching Engine
+↓
+Database Persistence
+↓
+Event Publisher
+↓
+WebSocket Broker
+↓
+Angular UI
 
 ---
 
-# Execution Flow
+# Infrastructure & DevOps
 
-```
-Frontend submits order
+The trading platform is fully containerized and designed to mirror modern cloud deployment architectures.
+
+---
+
+# Docker Containerization
+
+The backend runs inside a Docker container using a Java 17 runtime.
+
+The Dockerfile:
+
+* packages the Spring Boot JAR
+* creates a runtime container
+* exposes port 8081
+* runs the application
+
+Backend container endpoint:
+
+localhost:8081
+
+---
+
+# Full Stack Containerization
+
+The entire platform runs as a multi-container system using Docker Compose.
+
+Services:
+
+frontend → Angular served by Nginx
+backend → Spring Boot application
+postgres → PostgreSQL database
+redis → Redis cache
+
+System startup command:
+
+docker compose up
+
+Architecture:
+
+Browser
 ↓
-OrderService validates request
+Angular Container (Nginx)
 ↓
-MatchingEngine executes
+Spring Boot Container
 ↓
-Trades created
+PostgreSQL Container
 ↓
-Orders updated
+Redis Container
+
+Docker networking allows containers to communicate using service names.
+
+---
+
+# Production Angular Container
+
+The Angular frontend uses a **multi-stage Docker build**.
+
+Stage 1 — Angular Build
+
+Node.js compiles the Angular application and produces static build artifacts.
+
+Stage 2 — Nginx Runtime
+
+A lightweight Nginx container serves the compiled static files.
+
+Benefits:
+
+* faster startup
+* smaller container size
+* production-grade HTTP server
+
+---
+
+# SPA Routing Support
+
+Angular uses client-side routing.
+
+Refreshing routes such as:
+
+/orders
+/trades
+/depth
+
+would normally cause server 404 errors.
+
+Nginx configuration resolves this:
+
+try_files $uri $uri/ /index.html;
+
+This ensures Angular Router handles route resolution correctly.
+
+---
+
+# Continuous Integration (CI)
+
+A GitHub Actions pipeline verifies builds automatically.
+
+Pipeline file:
+
+.github/workflows/ci.yml
+
+Pipeline flow:
+
+Git push
 ↓
-Persisted in PostgreSQL
+GitHub Actions runner
 ↓
-Cached in Redis
+Checkout repository
 ↓
-DTO returned to frontend
-```
+Build backend (Maven)
+↓
+Build frontend (Angular)
+↓
+Build Docker images
+
+This guarantees every commit produces deployable containers.
+
+---
+
+# Cloud Deployment Readiness
+
+Because the system is containerized, it can be deployed to cloud infrastructure such as:
+
+* AWS EC2
+* DigitalOcean
+* Render
+* Fly.io
+
+Containers ensure consistent execution across:
+
+Local development
+CI pipeline
+Cloud servers
 
 ---
 
 # Production-Level Features
 
-- Exchange-style matching engine
-- Heap-based price-time priority
-- Concurrency-safe order lifecycle
-- Instrument-level engine isolation
-- UUID-secure identity model
-- DTO-based query optimization
-- Redis caching layer
-- JWT authentication
-- RBAC authorization
-- Secure email password reset
-- Angular execution-aware frontend
+* Exchange-style matching engine
+* Heap-based price-time priority
+* Concurrency-safe execution
+* Immutable order lifecycle
+* UUID-secure API routing
+* DTO-based query optimization
+* Redis caching layer
+* WebSocket real-time streaming
+* JWT authentication
+* RBAC authorization
+* Secure email password reset
+* Dockerized full-stack architecture
+* CI pipeline with automated container builds
 
 ---
 
 # Future Enhancements
 
-- WebSocket real-time order streaming
-- Docker containerization
-- Cloud deployment
-- CI/CD pipeline
-- Distributed matching engine
-- Kafka event streaming
+* automated Docker image publishing
+* cloud deployment automation
+* Kafka event streaming
+* distributed matching engine
+* advanced order book depth structures
 
 ---
 
 # Resume Summary
 
-Designed and implemented an exchange-style trading platform using Spring Boot, PostgreSQL, Redis, and Angular, featuring a concurrency-safe in-memory matching engine with heap-based price-time priority execution, immutable order lifecycle, UUID-secured routing preventing IDOR attacks, Redis caching, DTO-based query optimization eliminating N+1 queries, and JWT-secured authentication with production-grade password reset via email.
+Designed and implemented a backend-authoritative exchange-style trading platform using Spring Boot, PostgreSQL, Redis, and Angular, featuring a concurrency-safe in-memory matching engine with heap-based price-time priority execution, immutable order lifecycle, UUID-secured API routing preventing IDOR attacks, Redis caching, DTO-based query optimization eliminating N+1 queries, real-time WebSocket event streaming, and containerized deployment using Docker Compose with CI pipeline validation.
