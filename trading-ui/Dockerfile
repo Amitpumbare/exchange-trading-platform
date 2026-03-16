@@ -1,5 +1,5 @@
-# Build Angular
-FROM node:20-alpine AS build
+# Stage 1: Build Angular
+FROM node:20 AS build
 
 WORKDIR /app
 
@@ -8,15 +8,11 @@ RUN npm install
 
 COPY . .
 
-# Force Angular production build (uses environment.prod.ts)
 RUN npm run build -- --configuration production
 
-# Serve with Nginx
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
 COPY --from=build /app/dist/trading-ui/browser /usr/share/nginx/html
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx","-g","daemon off;"]
