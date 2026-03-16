@@ -1,6 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import { ReplaySubject } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -52,7 +53,7 @@ export class WebSocketService {
     this.connecting = true;
 
     this.client = new Client({
-      brokerURL: 'ws://localhost:8081/ws',
+      brokerURL: environment.wsUrl,
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000

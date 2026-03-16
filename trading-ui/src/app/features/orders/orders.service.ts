@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { InstrumentService } from '../../core/instrument.service';
+import { environment } from '../../environments/environment';
 
 export interface OrderResponse {
 
@@ -24,7 +25,7 @@ export interface OrderResponse {
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
 
-  private baseUrl = 'http://localhost:8081/orders';
+  private baseUrl = `${environment.apiBaseUrl}/orders`;
 
   constructor(
     private http: HttpClient,

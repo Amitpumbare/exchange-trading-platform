@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
-
+import { environment } from '../../environments/environment';
 
 export interface Instrument {
   instrumentId: string;
@@ -15,6 +15,8 @@ export interface Instrument {
 })
 export class InstrumentService {
 
+  private baseUrl = environment.apiBaseUrl;
+
   private selectedInstrumentSubject =
     new BehaviorSubject<Instrument | null>(null);
 
@@ -25,7 +27,7 @@ export class InstrumentService {
 
   loadInstruments() {
     return this.http.get<any[]>(
-      'http://localhost:8081/instruments/get-instruments'
+      `${this.baseUrl}/instruments/get-instruments`
     ).pipe(
       map(list =>
         list.map(inst => ({
@@ -36,8 +38,6 @@ export class InstrumentService {
       )
     );
   }
-
-
 
   setInstrument(inst: Instrument) {
 

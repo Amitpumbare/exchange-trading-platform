@@ -8,7 +8,8 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+# Force Angular production build (uses environment.prod.ts)
+RUN npm run build -- --configuration production
 
 # Serve with Nginx
 FROM nginx:alpine

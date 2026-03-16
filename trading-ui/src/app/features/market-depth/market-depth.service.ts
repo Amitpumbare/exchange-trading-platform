@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface DepthLevel {
   price: number;
@@ -17,7 +18,7 @@ export interface OrderBookResponse {
 })
 export class DepthService {
 
-  private baseUrl = 'http://localhost:8081/api/instruments';
+  private baseUrl = `${environment.apiBaseUrl}/instruments`;
 
   constructor(private http: HttpClient) {}
 
