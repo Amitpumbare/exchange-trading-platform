@@ -81,9 +81,9 @@
 /* CONTENT */
 .content {
   flex: 1;
-  min-height: 0;      /* ✅ allows child scroll */
-  overflow: hidden;   /* keep hidden to prevent page scroll */
-  display: flex;      /* ✅ required for child height control */
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
   flex-direction: column;
 }
 
@@ -96,6 +96,8 @@
 
   position: relative;
   width: 200px;
+
+  z-index: 2000; /* ✅ ADDED so dropdown stays above panels */
 
 }
 
@@ -151,7 +153,8 @@
 
   overflow: hidden;
 
-  z-index: 1000;
+  z-index: 3000; /* ✅ increased so it appears above order book */
+
 }
 
 
