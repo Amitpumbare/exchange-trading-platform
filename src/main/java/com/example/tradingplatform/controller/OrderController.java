@@ -16,7 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.List;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 @PreAuthorize("hasAnyRole('USER','ADMIN')")
 public class OrderController {
 
