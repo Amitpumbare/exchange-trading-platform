@@ -1,7 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import { ReplaySubject } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'

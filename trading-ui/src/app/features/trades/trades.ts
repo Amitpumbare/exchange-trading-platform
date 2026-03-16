@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TradesService } from './trades.service';
-import { WebSocketService } from '../../../core/websocket.service';
+import { WebSocketService } from '../../core/websocket.service';
 
 interface Trade {
   instrumentSymbol: string;
