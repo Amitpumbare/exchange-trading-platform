@@ -1,0 +1,90 @@
+package com.example.tradingplatform.controller;
+
+import com.example.tradingplatform.dto.CreateInstrumentRequest;
+import com.example.tradingplatform.dto.OrderResponse;
+import com.example.tradingplatform.dto.TradeResponse;
+import com.example.tradingplatform.exception.InstrumentNotFoundException;
+import com.example.tradingplatform.model.Instrument;
+import com.example.tradingplatform.model.InstrumentStatus;
+import com.example.tradingplatform.repository.InstrumentRepository;
+import com.example.tradingplatform.service.InstrumentService;
+import com.example.tradingplatform.service.OrderService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminController {
+
+    private final InstrumentRepository instrumentRepository;
+    private final OrderService orderService;
+    private final InstrumentService instrumentService;
+
+    public AdminController(InstrumentRepository instrumentRepository,
+                           OrderService orderService,
+                           InstrumentService instrumentService) {
+        this.instrumentRepository = instrumentRepository;
+        this.orderService = orderService;
+        this.instrumentService=instrumentService;
+    }
+
+    // ================= INSTRUMENT CONTROL =================
+
+    @PostMapping("/instruments/{instrumentId}/halt")
+    protected Instrument haltInstrument(@PathVariable Long instrumentId) {
+        Instrument instrument = instrumentRepository.findById(instrumentId)
+                .orElseThrow(() -> new InstrumentNotFoundException(instrumentId));
+
+        instrument.setInstrumentStatus(InstrumentStatus.HALTED);
+        return instrumentRepository.save(instrument);
+    }
+
+    @PostMapping("/instruments/{instrumentId}/resume")
+    protected Instrument resumeInstrument(@PathVariable Long instrumentId) {
+        Instrument instrument = instrumentRepository.findById(instrumentId)
+                .orElseThrow(() -> new InstrumentNotFoundException(instrumentId));
+
+        instrument.setInstrumentStatus(InstrumentStatus.ACTIVE);
+        return instrumentRepository.save(instrument);
+    }
+
+    // ================= VISIBILITY =================
+
+    @GetMapping("/instruments")
+    public List<Instrument> getAllInstruments() {
+        return instrumentRepository.findAll();
+    }
+
+    @GetMapping("/orders")
+    public List<OrderResponse> getAllOrders() {
+        return orderService.getAllOrderResponses();
+    }
+
+    @GetMapping("/trades")
+    public List<TradeResponse> getAllTrades() {
+        return orderService.getAllTrades();
+    }
+
+
+    // ================= ADD NEW INSTRUMENT =================
+
+    @PostMapping("/instruments")
+    public ResponseEntity<Instrument> createInstrument(
+            @Valid @RequestBody CreateInstrumentRequest request
+    ) {
+        Instrument instrument =
+                instrumentService.createInstrument(request.getSymbol());
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(instrument);
+    }
+
+}
+

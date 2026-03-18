@@ -51,7 +51,7 @@
 
       <div
         class="order-card"
-        *ngFor="let item of openOrders"
+        *ngFor="let item of openOrders; trackBy: trackByOrderId"
         [class.buy]="item.type === 'BUY'"
         [class.sell]="item.type === 'SELL'"
         (click)="selectOrder(item)">
@@ -59,7 +59,6 @@
 
         <div class="order-header">
 
-          <!-- ✅ ADDED instrument symbol -->
           <div class="order-title">
 
             <span class="instrument">
@@ -121,7 +120,6 @@
             (click)="cancelOrder(item.id!, $event)">
             Cancel
           </button>
-
 
           <button
             class="modify"
@@ -222,19 +220,17 @@
 
     <h2>Order History</h2>
 
-
     <div class="orders-grid">
 
       <div
         class="order-card"
-        *ngFor="let item of history"
+        *ngFor="let item of history; trackBy: trackByOrderId"
         [class.buy]="item.type === 'BUY'"
         [class.sell]="item.type === 'SELL'">
 
 
         <div class="order-header">
 
-          <!-- ✅ ADDED instrument symbol -->
           <div class="order-title">
 
             <span class="instrument">

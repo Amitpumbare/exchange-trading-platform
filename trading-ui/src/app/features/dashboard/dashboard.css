@@ -56,6 +56,9 @@
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.08);
   width: fit-content;
+
+  position: relative;      /* ✅ ADDED */
+  z-index: 5000;           /* ✅ ADDED so dropdown floats above order book */
 }
 
 .instrument-bar label {
@@ -81,9 +84,9 @@
 /* CONTENT */
 .content {
   flex: 1;
-  min-height: 0;      /* ✅ allows child scroll */
-  overflow: hidden;   /* keep hidden to prevent page scroll */
-  display: flex;      /* ✅ required for child height control */
+  min-height: 0;
+  overflow: visible;
+  display: flex;
   flex-direction: column;
 }
 
@@ -96,6 +99,8 @@
 
   position: relative;
   width: 200px;
+
+  z-index: 2000;
 
 }
 
@@ -151,7 +156,8 @@
 
   overflow: hidden;
 
-  z-index: 1000;
+  z-index: 6000;  /* slightly higher to guarantee top layer */
+
 }
 
 

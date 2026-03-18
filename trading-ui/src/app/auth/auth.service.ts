@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private baseUrl = 'http://localhost:8081/api/auth';
+  private baseUrl = `${environment.apiBaseUrl}/auth`;
   private readonly TOKEN_KEY = 'jwt_token';
 
   constructor(private http: HttpClient) {}
@@ -41,7 +42,6 @@ export class AuthService {
     const token = localStorage.getItem(this.TOKEN_KEY);
     return token;
   }
-
 
   isLoggedIn(): boolean {
     return !!this.getToken();

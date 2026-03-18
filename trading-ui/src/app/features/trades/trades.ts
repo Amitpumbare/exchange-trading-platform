@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TradesService } from './trades.service';
+import { WebSocketService } from '../../core/websocket.service';
 
 interface Trade {
   instrumentSymbol: string;
@@ -24,11 +25,35 @@ export class TradesComponent implements OnInit {
 
   constructor(
     private tradesService: TradesService,
-    private cd: ChangeDetectorRef
+    private websocket: WebSocketService,
+    private cd: ChangeDetectorRef,
+    private zone: NgZone
   ) {}
 
   ngOnInit(): void {
+
     this.loadTrades();
+
+    this.websocket.tradeEvents$.subscribe((event: Trade) => {
+
+      console.log("TRADE EVENT RECEIVED", event);
+
+      this.zone.run(() => {
+
+        // Add newest trade to top
+        this.trades.unshift(event);
+
+        // Limit list size
+        if (this.trades.length > 50) {
+          this.trades.pop();
+        }
+
+        this.cd.detectChanges();
+
+      });
+
+    });
+
   }
 
   loadTrades() {
@@ -41,14 +66,19 @@ export class TradesComponent implements OnInit {
         this.trades = res;
 
         this.loading = false;
-        this.cd.markForCheck();
+
+        this.cd.detectChanges();
+
       },
-      error: (err) => {
-        console.error('Trades API error', err);
+      error: () => {
+
         this.loading = false;
-        this.cd.markForCheck();
+
+        this.cd.detectChanges();
+
       }
     });
+
   }
 
 }

@@ -13,9 +13,9 @@
 
 
 	<groupId>com.example</groupId>
-	<artifactId>demo</artifactId>
+	<artifactId>trading-platform</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>demo</name>
+	<name>trading-platform</name>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
@@ -95,6 +95,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 
 
