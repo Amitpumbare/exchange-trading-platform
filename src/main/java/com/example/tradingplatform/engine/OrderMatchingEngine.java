@@ -109,6 +109,12 @@ public class OrderMatchingEngine {
             Order buy = buyBook.poll();
             Order sell = sellBook.poll();
 
+            if(buy.getUserId().equals(sell.getUserId())){
+                buyBook.offer(buy);
+                sellBook.offer(sell);
+                break;
+            }
+
             long matchedQty = Math.min(buy.getQuantity(), sell.getQuantity());
 
             long remainingBuy = buy.getQuantity() - matchedQty;
