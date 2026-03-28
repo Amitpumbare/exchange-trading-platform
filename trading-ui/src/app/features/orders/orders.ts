@@ -31,13 +31,15 @@ export class OrdersComponent implements OnInit {
 
   loading = true;
   isPlacingOrder = false;
-  isNewOrderMode = false;
   isInstrumentHalted = false;
 
   selectedOrder?: Order;
   selectedInstrument?: Instrument;
 
   view: 'OPEN' | 'HISTORY' = 'OPEN';
+
+  isTicketOpen = false;
+  mode: 'CREATE' | 'EDIT' = 'CREATE';
 
   ticket = {
     type: 'BUY' as 'BUY' | 'SELL',
@@ -57,48 +59,33 @@ export class OrdersComponent implements OnInit {
 
     this.loadOrders();
 
-    // WebSocket order events
+    // ✅ FIXED WebSocket merge logic (ONLY CHANGE)
     this.websocket.orderEvents$.subscribe((event: Order) => {
-
-      console.log("ORDER EVENT RECEIVED", event);
 
       this.zone.run(() => {
 
-        const exists = this.orders.some(o => o.id === event.id);
+        const index = this.orders.findIndex(o => o.id === event.id);
 
-        if (exists) {
-
-          // replace existing order
-          this.orders = this.orders.map(o =>
-            o.id === event.id ? event : o
-          );
-
+        if (index !== -1) {
+          this.orders[index] = event;   // update existing
         } else {
-
-          // prepend new order
-          this.orders = [event, ...this.orders];
-
+          this.orders.unshift(event);  // add new
         }
 
         this.rebuildLists();
-
         this.cd.detectChanges();
 
       });
 
     });
 
-    // Instrument change listener
     this.instrumentService.selectedInstrument$
       .subscribe((inst: Instrument | null) => {
 
         if (!inst) return;
-
-        // avoid reload loop
         if (this.selectedInstrument?.symbol === inst.symbol) return;
 
         this.selectedInstrument = inst;
-
         this.isInstrumentHalted = inst.halted;
 
         this.cd.detectChanges();
@@ -114,11 +101,15 @@ export class OrdersComponent implements OnInit {
   rebuildLists() {
 
     this.openOrders = this.orders.filter(
-      o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+      o =>
+        o.status?.toUpperCase().trim() === 'OPEN' ||
+        o.status?.toUpperCase().trim() === 'PARTIALLY_FILLED'
     );
 
     this.history = this.orders.filter(
-      o => o.status === 'FILLED' || o.status === 'CANCELLED'
+      o =>
+        o.status?.toUpperCase().trim() === 'FILLED' ||
+        o.status?.toUpperCase().trim() === 'CANCELLED'
     );
 
   }
@@ -132,11 +123,9 @@ export class OrdersComponent implements OnInit {
       next: (res: Order[]) => {
 
         this.orders = res;
-
         this.rebuildLists();
 
         this.loading = false;
-
         this.cd.detectChanges();
 
       },
@@ -144,43 +133,6 @@ export class OrdersComponent implements OnInit {
       error: () => {
 
         this.loading = false;
-
-        this.cd.detectChanges();
-
-      }
-
-    });
-
-  }
-
-  placeOrder() {
-
-    if (this.isPlacingOrder || this.isInstrumentHalted) return;
-
-    this.isPlacingOrder = true;
-
-    this.ordersService.createOrder(this.ticket).subscribe({
-
-      next: () => {
-
-        this.selectedOrder = undefined;
-        this.isNewOrderMode = false;
-
-        this.resetTicket();
-
-        this.cd.detectChanges();
-
-      },
-
-      error: () => {
-
-        this.isPlacingOrder = false;
-
-      },
-
-      complete: () => {
-
-        this.isPlacingOrder = false;
         this.cd.detectChanges();
 
       }
@@ -202,8 +154,8 @@ export class OrdersComponent implements OnInit {
   openNewOrderTicket() {
 
     this.selectedOrder = undefined;
-
-    this.isNewOrderMode = true;
+    this.mode = 'CREATE';
+    this.isTicketOpen = true;
 
     this.resetTicket();
 
@@ -214,25 +166,18 @@ export class OrdersComponent implements OnInit {
     if (event) event.stopPropagation();
 
     const order = this.openOrders.find(o => o.id === orderId);
-
     if (!order || order.processing) return;
 
     order.processing = true;
 
-    this.selectedOrder = undefined;
-
     this.ordersService.cancelOrder(orderId).subscribe({
 
       next: () => {
-
-        this.isNewOrderMode = false;
-
+        this.closeTicket();
       },
 
       error: () => {
-
         order.processing = false;
-
       }
 
     });
@@ -241,48 +186,19 @@ export class OrdersComponent implements OnInit {
 
   modifyOrder(orderId: number, event?: MouseEvent) {
 
-    if (event) event.stopPropagation();
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
 
     if (this.isInstrumentHalted) return;
 
-    if (!this.selectedOrder || this.selectedOrder.id !== orderId) return;
-
-    const order = this.selectedOrder;
-
-    if (order.processing) return;
-
-    order.processing = true;
-
-    this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
-
-      next: () => {
-
-        this.selectedOrder = undefined;
-        this.isNewOrderMode = false;
-
-        this.cd.detectChanges();
-
-      },
-
-      error: () => order.processing = false
-
-    });
-
-  }
-
-  selectOrder(order: Order) {
-
-    this.isNewOrderMode = false;
-
-    if (this.selectedOrder?.id === order.id) {
-
-      this.selectedOrder = undefined;
-
-      return;
-
-    }
+    const order = this.openOrders.find(o => o.id === orderId);
+    if (!order) return;
 
     this.selectedOrder = order;
+    this.mode = 'EDIT';
+    this.isTicketOpen = true;
 
     this.ticket.type = order.type === 'BUY' ? 'SELL' : 'BUY';
     this.ticket.price = order.price;
@@ -290,8 +206,76 @@ export class OrdersComponent implements OnInit {
 
   }
 
+  // toggle open/close
+  selectOrder(order: Order) {
+
+    if (this.selectedOrder?.id === order.id && this.isTicketOpen) {
+      this.closeTicket();
+      return;
+    }
+
+    this.modifyOrder(order.id!);
+  }
+
   trackByOrderId(index: number, order: Order) {
     return order.id;
+  }
+
+  submitOrder() {
+
+    if (this.isInstrumentHalted) return;
+
+    if (this.mode === 'EDIT' && this.selectedOrder) {
+
+      const orderId = this.selectedOrder.id!;
+      const order = this.selectedOrder;
+
+      if (order.processing) return;
+
+      order.processing = true;
+
+      this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
+        next: () => this.closeTicket(),
+        error: () => order.processing = false
+      });
+
+    } else {
+
+      if (this.isPlacingOrder) return;
+
+      this.isPlacingOrder = true;
+
+      this.ordersService.createOrder(this.ticket).subscribe({
+
+        next: () => this.closeTicket(),
+
+        error: () => this.isPlacingOrder = false,
+
+        complete: () => {
+          this.isPlacingOrder = false;
+          this.cd.detectChanges();
+        }
+
+      });
+
+    }
+
+  }
+
+  closeTicket() {
+
+    this.isTicketOpen = false;
+    this.selectedOrder = undefined;
+
+    setTimeout(() => {
+
+      this.selectedOrder = undefined;
+      this.resetTicket();
+
+      this.cd.detectChanges();
+
+    }, 300);
+
   }
 
 }

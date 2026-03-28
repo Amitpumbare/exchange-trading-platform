@@ -16,13 +16,13 @@
 </div>
 
 
-<!-- NEW ORDER ONLY IN OPEN TAB -->
+<!-- PLACE ORDER BUTTON -->
 <button
-  class="new-order"
+  class="place-order-btn"
   *ngIf="view === 'OPEN'"
   (click)="openNewOrderTicket()">
 
-  New Order
+  Place Order
 
 </button>
 
@@ -46,7 +46,6 @@
 
     </div>
 
-
     <div class="orders-grid">
 
       <div
@@ -55,7 +54,6 @@
         [class.buy]="item.type === 'BUY'"
         [class.sell]="item.type === 'SELL'"
         (click)="selectOrder(item)">
-
 
         <div class="order-header">
 
@@ -78,7 +76,6 @@
 
           </div>
 
-
           <span
             class="status"
             [ngClass]="item.status">
@@ -88,7 +85,6 @@
           </span>
 
         </div>
-
 
         <div class="order-body">
 
@@ -112,7 +108,6 @@
 
         </div>
 
-
         <div class="order-actions">
 
           <button
@@ -130,7 +125,6 @@
 
         </div>
 
-
       </div>
 
     </div>
@@ -141,32 +135,26 @@
   <!-- ===== SLIDING TICKET ===== -->
   <div
     class="ticket-wrapper"
-    [class.open]="selectedOrder || isNewOrderMode">
-
+    [class.open]="isTicketOpen">
 
     <div class="order-ticket">
 
+      <button class="close-btn" (click)="closeTicket()">✕</button>
 
       <div
         class="market-context"
         [class.buy]="ticket.type === 'BUY'"
         [class.sell]="ticket.type === 'SELL'">
 
-        <span *ngIf="selectedOrder">
-          Trading against
-          {{ ticket.type === 'BUY' ? 'SELL' : 'BUY' }}
-
-          <span class="numeric">
-            {{ selectedOrder.price }}
-          </span>
+        <span *ngIf="mode === 'EDIT'">
+          Modify Order • {{ selectedOrder?.instrumentSymbol }}
         </span>
 
-        <span *ngIf="!selectedOrder">
-          Place New Order
+        <span *ngIf="mode === 'CREATE'">
+          Place Order
         </span>
 
       </div>
-
 
       <label>Side</label>
 
@@ -179,14 +167,12 @@
 
       </select>
 
-
       <label>Price</label>
 
       <input
         type="number"
         [(ngModel)]="ticket.price"
         [disabled]="isInstrumentHalted">
-
 
       <label>Quantity</label>
 
@@ -195,16 +181,14 @@
         [(ngModel)]="ticket.quantity"
         [disabled]="isInstrumentHalted">
 
-
       <button
         class="place"
         [disabled]="isInstrumentHalted"
-        (click)="placeOrder()">
+        (click)="submitOrder()">
 
-        Place Order
+        {{ mode === 'EDIT' ? 'Update Order' : 'Place Order' }}
 
       </button>
-
 
     </div>
 
@@ -214,76 +198,80 @@
 
 
 <!-- ================= ORDER HISTORY ================= -->
-<div *ngIf="view === 'HISTORY'" class="orders-layout">
+<div *ngIf="view === 'HISTORY'" class="orders-book">
 
-  <div class="orders-book">
+  <h2>Order History</h2>
 
-    <h2>Order History</h2>
+  <div *ngIf="loading" class="loading">
+    Loading…
+  </div>
 
-    <div class="orders-grid">
+  <div
+    *ngIf="!loading && history.length === 0"
+    class="empty">
 
-      <div
-        class="order-card"
-        *ngFor="let item of history; trackBy: trackByOrderId"
-        [class.buy]="item.type === 'BUY'"
-        [class.sell]="item.type === 'SELL'">
+    No order history
 
+  </div>
 
-        <div class="order-header">
+  <div class="orders-grid">
 
-          <div class="order-title">
+    <div
+      class="order-card"
+      *ngFor="let item of history; trackBy: trackByOrderId"
+      [class.buy]="item.type === 'BUY'"
+      [class.sell]="item.type === 'SELL'">
 
-            <span class="instrument">
-              {{ item.instrumentSymbol }}
-            </span>
+      <div class="order-header">
 
-            <span
-              class="type"
-              [ngClass]="{
-                buy: item.type === 'BUY',
-                sell: item.type === 'SELL'
-              }">
+        <div class="order-title">
 
-              {{ item.type }}
-
-            </span>
-
-          </div>
-
+          <span class="instrument">
+            {{ item.instrumentSymbol }}
+          </span>
 
           <span
-            class="status"
-            [ngClass]="item.status">
+            class="type"
+            [ngClass]="{
+              buy: item.type === 'BUY',
+              sell: item.type === 'SELL'
+            }">
 
-            {{ item.status }}
+            {{ item.type }}
 
           </span>
 
         </div>
 
+        <span
+          class="status"
+          [ngClass]="item.status">
 
-        <div class="order-body">
+          {{ item.status }}
 
-          <div class="value-row">
-            <span>Price</span>
-            <span class="numeric">
-              {{ item.price }}
-            </span>
-          </div>
+        </span>
 
-          <div class="value-row">
-            <span>Quantity</span>
-            <span class="numeric">
-              {{ item.quantity }}
-            </span>
-          </div>
+      </div>
 
-          <p class="order-message">
-            {{ item.message }}
-          </p>
+      <div class="order-body">
 
+        <div class="value-row">
+          <span>Price</span>
+          <span class="numeric">
+            {{ item.price | number:'1.0-2' }}
+          </span>
         </div>
 
+        <div class="value-row">
+          <span>Quantity</span>
+          <span class="numeric">
+            {{ item.quantity | number:'1.0-2' }}
+          </span>
+        </div>
+
+        <p class="order-message">
+          {{ item.message }}
+        </p>
 
       </div>
 
