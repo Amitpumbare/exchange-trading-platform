@@ -16,13 +16,13 @@
 </div>
 
 
-<!-- NEW ORDER ONLY IN OPEN TAB -->
+<!-- PLACE ORDER BUTTON -->
 <button
-  class="new-order"
+  class="place-order-btn"
   *ngIf="view === 'OPEN'"
   (click)="openNewOrderTicket()">
 
-  New Order
+  Place Order
 
 </button>
 
@@ -141,7 +141,7 @@
   <!-- ===== SLIDING TICKET ===== -->
   <div
     class="ticket-wrapper"
-    [class.open]="selectedOrder || isNewOrderMode">
+    [class.open]="isTicketOpen">
 
 
     <div class="order-ticket">
@@ -152,17 +152,12 @@
         [class.buy]="ticket.type === 'BUY'"
         [class.sell]="ticket.type === 'SELL'">
 
-        <span *ngIf="selectedOrder">
-          Trading against
-          {{ ticket.type === 'BUY' ? 'SELL' : 'BUY' }}
-
-          <span class="numeric">
-            {{ selectedOrder.price }}
-          </span>
+        <span *ngIf="mode === 'EDIT'">
+          Modify Order • {{ selectedOrder?.instrumentSymbol }}
         </span>
 
-        <span *ngIf="!selectedOrder">
-          Place New Order
+        <span *ngIf="mode === 'CREATE'">
+          Place Order
         </span>
 
       </div>
@@ -199,9 +194,9 @@
       <button
         class="place"
         [disabled]="isInstrumentHalted"
-        (click)="placeOrder()">
+        (click)="submitOrder()">
 
-        Place Order
+        {{ mode === 'EDIT' ? 'Update Order' : 'Place Order' }}
 
       </button>
 
