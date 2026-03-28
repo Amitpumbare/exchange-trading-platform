@@ -59,7 +59,6 @@ export class OrdersComponent implements OnInit {
 
     this.loadOrders();
 
-    // ✅ FIXED WebSocket merge logic (ONLY CHANGE)
     this.websocket.orderEvents$.subscribe((event: Order) => {
 
       this.zone.run(() => {
@@ -67,9 +66,9 @@ export class OrdersComponent implements OnInit {
         const index = this.orders.findIndex(o => o.id === event.id);
 
         if (index !== -1) {
-          this.orders[index] = event;   // update existing
+          this.orders[index] = event;
         } else {
-          this.orders.unshift(event);  // add new
+          this.orders.unshift(event);
         }
 
         this.rebuildLists();
@@ -174,6 +173,7 @@ export class OrdersComponent implements OnInit {
 
       next: () => {
         this.closeTicket();
+        this.loadOrders();   // ✅ FIX
       },
 
       error: () => {
@@ -206,7 +206,6 @@ export class OrdersComponent implements OnInit {
 
   }
 
-  // toggle open/close
   selectOrder(order: Order) {
 
     if (this.selectedOrder?.id === order.id && this.isTicketOpen) {
@@ -235,7 +234,10 @@ export class OrdersComponent implements OnInit {
       order.processing = true;
 
       this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
-        next: () => this.closeTicket(),
+        next: () => {
+          this.closeTicket();
+          this.loadOrders();   // ✅ FIX
+        },
         error: () => order.processing = false
       });
 
@@ -247,7 +249,10 @@ export class OrdersComponent implements OnInit {
 
       this.ordersService.createOrder(this.ticket).subscribe({
 
-        next: () => this.closeTicket(),
+        next: () => {
+          this.closeTicket();
+          this.loadOrders();   // ✅ FIX
+        },
 
         error: () => this.isPlacingOrder = false,
 
