@@ -59,19 +59,17 @@ export class OrdersComponent implements OnInit {
 
     this.loadOrders();
 
-    // ✅ REVERTED TO ORIGINAL WORKING LOGIC
+    // ✅ FIXED WebSocket merge logic (ONLY CHANGE)
     this.websocket.orderEvents$.subscribe((event: Order) => {
 
       this.zone.run(() => {
 
-        const exists = this.orders.some(o => o.id === event.id);
+        const index = this.orders.findIndex(o => o.id === event.id);
 
-        if (exists) {
-          this.orders = this.orders.map(o =>
-            o.id === event.id ? event : o
-          );
+        if (index !== -1) {
+          this.orders[index] = event;   // update existing
         } else {
-          this.orders = [event, ...this.orders];
+          this.orders.unshift(event);  // add new
         }
 
         this.rebuildLists();
@@ -103,11 +101,15 @@ export class OrdersComponent implements OnInit {
   rebuildLists() {
 
     this.openOrders = this.orders.filter(
-      o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'
+      o =>
+        o.status?.toUpperCase().trim() === 'OPEN' ||
+        o.status?.toUpperCase().trim() === 'PARTIALLY_FILLED'
     );
 
     this.history = this.orders.filter(
-      o => o.status === 'FILLED' || o.status === 'CANCELLED'
+      o =>
+        o.status?.toUpperCase().trim() === 'FILLED' ||
+        o.status?.toUpperCase().trim() === 'CANCELLED'
     );
 
   }
@@ -204,7 +206,14 @@ export class OrdersComponent implements OnInit {
 
   }
 
+  // toggle open/close
   selectOrder(order: Order) {
+
+    if (this.selectedOrder?.id === order.id && this.isTicketOpen) {
+      this.closeTicket();
+      return;
+    }
+
     this.modifyOrder(order.id!);
   }
 
@@ -258,9 +267,14 @@ export class OrdersComponent implements OnInit {
     this.isTicketOpen = false;
     this.selectedOrder = undefined;
 
-    this.resetTicket();
+    setTimeout(() => {
 
-    this.cd.detectChanges();
+      this.selectedOrder = undefined;
+      this.resetTicket();
+
+      this.cd.detectChanges();
+
+    }, 300);
 
   }
 
