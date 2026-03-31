@@ -10,6 +10,8 @@ import com.example.tradingplatform.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -22,6 +24,7 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private static final Logger logger = LoggerFactory.getLogger(PasswordResetService.class);
 
     public PasswordResetService(UserRepository userRepository,
                                 PasswordResetTokenRepository tokenRepository,
@@ -56,7 +59,9 @@ public class PasswordResetService {
         tokenRepository.save(resetToken);
 
         String resetLink =
-                "http://localhost:4200/reset-password?token=" + token;
+                "http://13.233.63.4/reset-password?token=" + token;
+
+        logger.info("🔐 PASSWORD RESET LINK for {}: {}", user.getEmail(), resetLink);
 
         emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
     }
