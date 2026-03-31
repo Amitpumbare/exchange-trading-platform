@@ -24,7 +24,17 @@
 
     <!-- Password -->
     <label>Password</label>
-    <input type="password" formControlName="password" placeholder="Enter password"/>
+    <div class="password-field">
+      <input
+        [attr.type]="showPassword ? 'text' : 'password'"
+        formControlName="password"
+        placeholder="Enter password"
+      />
+
+      <span class="eye-icon" (click)="togglePassword()">
+        <i [class]="showPassword ? 'fa fa-eye' : 'fa fa-eye-slash'"></i>
+      </span>
+    </div>
 
     <span class="error"
           *ngIf="password?.invalid && (password?.touched || password?.dirty)">
@@ -33,7 +43,17 @@
 
     <!-- Confirm Password -->
     <label>Confirm Password</label>
-    <input type="password" formControlName="confirmPassword" placeholder="Confirm password"/>
+    <div class="password-field">
+      <input
+        [attr.type]="showConfirmPassword ? 'text' : 'password'"
+        formControlName="confirmPassword"
+        placeholder="Confirm password"
+      />
+
+      <span class="eye-icon" (click)="toggleConfirmPassword()">
+        <i [class]="showConfirmPassword ? 'fa fa-eye' : 'fa fa-eye-slash'"></i>
+      </span>
+    </div>
 
     <span class="error"
           *ngIf="signupForm.errors?.['passwordMismatch'] && (confirmPassword?.touched || confirmPassword?.dirty)">

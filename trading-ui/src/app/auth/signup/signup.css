@@ -43,9 +43,8 @@ label {
   color: #f3f4f6;
 }
 
-/* INPUTS */
-input[type="text"],
-input[type="password"] {
+/* INPUTS (IMPROVED — single rule) */
+input {
   width: 100%;
   padding: 12px;
 
@@ -61,6 +60,34 @@ input[type="password"] {
 
 input:focus {
   border: 1px solid #00c6ff;
+}
+
+/* ===== PASSWORD FIELD ===== */
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field input {
+  padding-right: 45px;
+}
+
+/* Eye Icon */
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  cursor: pointer;
+  color: #ccc;
+  font-size: 16px;
+
+  transition: 0.2s ease;
+}
+
+.eye-icon:hover {
+  color: #00c6ff;
 }
 
 /* BUTTON */

@@ -5,6 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { InstrumentService, Instrument } from '../../core/instrument.service';
 import { WebSocketService } from '../../core/websocket.service';
 
+// 🔥 ADDED
+import { ToastrService } from 'ngx-toastr';
+
 interface Order {
   id?: number;
   instrumentSymbol: string;
@@ -52,24 +55,34 @@ export class OrdersComponent implements OnInit {
     private cd: ChangeDetectorRef,
     private instrumentService: InstrumentService,
     private websocket: WebSocketService,
-    private zone: NgZone
+    private zone: NgZone,
+
+    // 🔥 ADDED
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
 
     this.loadOrders();
 
-    // ✅ FIXED WebSocket merge logic (ONLY CHANGE)
+    // ✅ WebSocket
     this.websocket.orderEvents$.subscribe((event: Order) => {
 
       this.zone.run(() => {
 
+        const existing = this.orders.find(o => o.id === event.id);
+
+        // 🔥 ADDED: TOASTER LOGIC
+        if (!existing || existing.status !== event.status) {
+          this.handleOrderToast(event);
+        }
+
         const index = this.orders.findIndex(o => o.id === event.id);
 
         if (index !== -1) {
-          this.orders[index] = event;   // update existing
+          this.orders[index] = event;
         } else {
-          this.orders.unshift(event);  // add new
+          this.orders.unshift(event);
         }
 
         this.rebuildLists();
@@ -95,6 +108,42 @@ export class OrdersComponent implements OnInit {
         });
 
       });
+
+  }
+
+  // 🔥 ADDED: CENTRAL TOAST HANDLER
+  handleOrderToast(event: Order) {
+
+    switch (event.status) {
+
+      case 'FILLED':
+        this.toastr.success(
+          `Executed ${event.quantity} @ ₹${event.price}`,
+          'Trade Executed ⚡'
+        );
+        break;
+
+      case 'PARTIALLY_FILLED':
+        this.toastr.info(
+          `Partial fill ${event.quantity} @ ₹${event.price}`,
+          'Order Update 📊'
+        );
+        break;
+
+      case 'CANCELLED':
+        this.toastr.warning(
+          'Order cancelled',
+          'Cancelled ❌'
+        );
+        break;
+
+      case 'OPEN':
+        this.toastr.success(
+          'Order placed successfully',
+          'Order Placed 📈'
+        );
+        break;
+    }
 
   }
 
@@ -173,6 +222,7 @@ export class OrdersComponent implements OnInit {
     this.ordersService.cancelOrder(orderId).subscribe({
 
       next: () => {
+        this.toastr.warning('Order cancelled ❌'); // 🔥 ADDED
         this.closeTicket();
       },
 
@@ -206,7 +256,6 @@ export class OrdersComponent implements OnInit {
 
   }
 
-  // toggle open/close
   selectOrder(order: Order) {
 
     if (this.selectedOrder?.id === order.id && this.isTicketOpen) {
@@ -235,7 +284,10 @@ export class OrdersComponent implements OnInit {
       order.processing = true;
 
       this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
-        next: () => this.closeTicket(),
+        next: () => {
+          this.toastr.info('Order updated ✏️'); // 🔥 ADDED
+          this.closeTicket();
+        },
         error: () => order.processing = false
       });
 
@@ -247,7 +299,10 @@ export class OrdersComponent implements OnInit {
 
       this.ordersService.createOrder(this.ticket).subscribe({
 
-        next: () => this.closeTicket(),
+        next: () => {
+          this.toastr.success('Order placed 📈'); // 🔥 ADDED
+          this.closeTicket();
+        },
 
         error: () => this.isPlacingOrder = false,
 
