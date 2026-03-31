@@ -48,6 +48,9 @@ export class OrdersComponent implements OnInit {
     quantity: 0
   };
 
+  // 🔥 ADDED: per-order toast debounce
+  private toastDebounceMap = new Map<number, any>();
+
   constructor(
     private ordersService: OrdersService,
     private cd: ChangeDetectorRef,
@@ -105,39 +108,54 @@ export class OrdersComponent implements OnInit {
 
   }
 
+  // 🔥 UPDATED: SINGLE TOAST PER ACTION (NO LOGIC CHANGE)
   handleOrderToast(event: Order) {
 
-    switch (event.status) {
+    const orderId = event.id!;
 
-      case 'FILLED':
-        this.toastr.success(
-          `Executed ${event.quantity} @ ₹${event.price}`,
-          'Trade Executed ⚡'
-        );
-        break;
-
-      case 'PARTIALLY_FILLED':
-        this.toastr.info(
-          `Partial fill ${event.quantity} @ ₹${event.price}`,
-          'Order Update 📊'
-        );
-        break;
-
-      case 'CANCELLED':
-        this.toastr.warning(
-          'Order cancelled',
-          'Cancelled ❌'
-        );
-        break;
-
-      case 'OPEN':
-        this.toastr.success(
-          'Order placed successfully',
-          'Order Placed 📈'
-        );
-        break;
+    // clear previous pending toast for same order
+    if (this.toastDebounceMap.has(orderId)) {
+      clearTimeout(this.toastDebounceMap.get(orderId));
     }
 
+    const timeout = setTimeout(() => {
+
+      switch (event.status) {
+
+        case 'OPEN':
+          this.toastr.success(
+            `Order placed (${event.type})`,
+            'Placed 📈'
+          );
+          break;
+
+        case 'PARTIALLY_FILLED':
+          this.toastr.info(
+            `Partially filled (${event.quantity})`,
+            'Order Update 📊'
+          );
+          break;
+
+        case 'FILLED':
+          this.toastr.success(
+            `Executed ${event.quantity} @ ₹${event.price}`,
+            'Trade Executed ⚡'
+          );
+          break;
+
+        case 'CANCELLED':
+          this.toastr.warning(
+            'Order cancelled',
+            'Cancelled ❌'
+          );
+          break;
+      }
+
+      this.toastDebounceMap.delete(orderId);
+
+    }, 250); // collapse multiple events
+
+    this.toastDebounceMap.set(orderId, timeout);
   }
 
   rebuildLists() {
