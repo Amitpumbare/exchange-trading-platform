@@ -4,8 +4,6 @@ import { OrdersService } from './orders.service';
 import { FormsModule } from '@angular/forms';
 import { InstrumentService, Instrument } from '../../core/instrument.service';
 import { WebSocketService } from '../../core/websocket.service';
-
-// 🔥 ADDED
 import { ToastrService } from 'ngx-toastr';
 
 interface Order {
@@ -56,8 +54,6 @@ export class OrdersComponent implements OnInit {
     private instrumentService: InstrumentService,
     private websocket: WebSocketService,
     private zone: NgZone,
-
-    // 🔥 ADDED
     private toastr: ToastrService
   ) {}
 
@@ -65,14 +61,12 @@ export class OrdersComponent implements OnInit {
 
     this.loadOrders();
 
-    // ✅ WebSocket
     this.websocket.orderEvents$.subscribe((event: Order) => {
 
       this.zone.run(() => {
 
         const existing = this.orders.find(o => o.id === event.id);
 
-        // 🔥 ADDED: TOASTER LOGIC
         if (!existing || existing.status !== event.status) {
           this.handleOrderToast(event);
         }
@@ -111,7 +105,6 @@ export class OrdersComponent implements OnInit {
 
   }
 
-  // 🔥 ADDED: CENTRAL TOAST HANDLER
   handleOrderToast(event: Order) {
 
     switch (event.status) {
@@ -222,7 +215,6 @@ export class OrdersComponent implements OnInit {
     this.ordersService.cancelOrder(orderId).subscribe({
 
       next: () => {
-        this.toastr.warning('Order cancelled ❌'); // 🔥 ADDED
         this.closeTicket();
       },
 
@@ -284,10 +276,7 @@ export class OrdersComponent implements OnInit {
       order.processing = true;
 
       this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
-        next: () => {
-          this.toastr.info('Order updated ✏️'); // 🔥 ADDED
-          this.closeTicket();
-        },
+        next: () => this.closeTicket(),
         error: () => order.processing = false
       });
 
@@ -299,10 +288,7 @@ export class OrdersComponent implements OnInit {
 
       this.ordersService.createOrder(this.ticket).subscribe({
 
-        next: () => {
-          this.toastr.success('Order placed 📈'); // 🔥 ADDED
-          this.closeTicket();
-        },
+        next: () => this.closeTicket(),
 
         error: () => this.isPlacingOrder = false,
 
