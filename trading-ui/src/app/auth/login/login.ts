@@ -6,7 +6,6 @@ import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { RouterLink } from '@angular/router';
 
-
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,6 +20,13 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private toastr: ToastrService
   ) {}
+
+  // 👁️ toggle state
+  showPassword = false;
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
 
   loginForm = new FormGroup({
     email: new FormControl('', [
@@ -45,6 +51,7 @@ export class LoginComponent implements OnInit {
   onSubmit() {
 
     if (!this.loginForm.valid) {
+      this.loginForm.markAllAsTouched();
       return;
     }
 
@@ -58,19 +65,13 @@ export class LoginComponent implements OnInit {
     this.auth.login(payload).subscribe({
       next: (res: any) => {
 
-        // 🔑 Store JWT token
         this.auth.setToken(res.token);
         localStorage.setItem('userName', res.fullName);
 
-        // 🔥 FIX RACE CONDITION
         Promise.resolve().then(() => {
-
           this.router.navigate(['/dashboard']).then(() => {
-
             this.toastr.success('Login Successful');
-
           });
-
         });
 
       },
