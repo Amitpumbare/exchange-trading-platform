@@ -3,9 +3,20 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
+
+  /* 🔥 GLOBAL FONT FIX */
+  font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 14px;
 }
 
 
+/* 🔥 IMPROVE TEXT RENDERING */
+* {
+  box-sizing: border-box;
+}
+
+
+/* AUTH BACKGROUND */
 .auth-background {
 
   background:
@@ -26,20 +37,30 @@ html, body {
   justify-content: center;
 }
 
-/* TOAST CENTER ALIGN */
+
+/* =========================
+   TOAST POSITION FIX
+========================= */
+
+/* 🔥 Better vertical spacing */
 .toast-top-center {
-  top: 20px;
+  top: 60px; /* 🔥 WAS 20px → too close to top */
   right: 0;
   width: 100%;
 }
 
+/* Center align */
 #toast-container.toast-top-center > div {
   margin: 0 auto;
   width: 320px;
   text-align: center;
 }
 
-/* SUCCESS TOAST — EXECUTION STYLE */
+
+/* =========================
+   TOAST STYLE
+========================= */
+
 .toast-success {
   background: linear-gradient(135deg,#00c853,#43a047) !important;
   box-shadow: 0 0 10px rgba(0,255,150,0.6);
