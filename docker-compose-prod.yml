@@ -37,6 +37,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: post1234
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      MAIL_USERNAME: amitprashantumbare@gmail.com
+      MAIL_PASSWORD: hajidqdztruwinfs
     logging:
       options:
         max-size: "10m"
