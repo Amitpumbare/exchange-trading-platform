@@ -51,13 +51,11 @@ export class OrdersComponent implements OnInit {
     quantity: 0
   };
 
-  private toastDebounceMap = new Map<number, any>();
+  // ✅ MODIFY detection
+  private lastCancelTime = 0;
 
-  // ✅ STATIC → survives component reload
-  private static processedEvents = new Set<string>();
-
-  // ✅ MODIFY FIX → per order tracking
-  private modifyingOrderIds = new Set<number>();
+  // ✅ CANCEL delay handler
+  private cancelTimeout: any = null;
 
   constructor(
     private ordersService: OrdersService,
@@ -76,13 +74,7 @@ export class OrdersComponent implements OnInit {
 
       this.zone.run(() => {
 
-        // ✅ STRONGER KEY
-        const eventKey = `${event.id}-${event.status}-${event.price}-${event.quantity}`;
-
-        if (!OrdersComponent.processedEvents.has(eventKey)) {
-          OrdersComponent.processedEvents.add(eventKey);
-          this.handleOrderToast(event);
-        }
+        this.processEvent(event);
 
         const index = this.orders.findIndex(o => o.id === event.id);
 
@@ -118,76 +110,76 @@ export class OrdersComponent implements OnInit {
 
   }
 
-  handleOrderToast(event: Order) {
+  // 🔥 FINAL TOAST LOGIC
+  processEvent(event: Order) {
 
-    const orderId = event.id!;
+    const now = Date.now();
 
-    if (this.toastDebounceMap.has(orderId)) {
-      clearTimeout(this.toastDebounceMap.get(orderId));
-    }
+    switch (event.status) {
 
-    const timeout = setTimeout(() => {
+      case 'CANCELLED':
 
-      // ✅ MODIFY FIX (correct handling)
-      if (this.modifyingOrderIds.has(orderId)) {
-        this.toastr.info('Order modified', 'Updated ✏️');
-        this.modifyingOrderIds.delete(orderId);
-        this.toastDebounceMap.delete(orderId);
+        // Delay cancel toast → may be modify
+        this.cancelTimeout = setTimeout(() => {
+          this.toastr.warning('Order cancelled', 'Cancelled ❌');
+        }, 300);
+
+        this.lastCancelTime = now;
+        return;
+
+      case 'OPEN':
+
+        // ✅ MODIFY DETECTED
+        if (now - this.lastCancelTime < 500) {
+
+          if (this.cancelTimeout) {
+            clearTimeout(this.cancelTimeout);
+            this.cancelTimeout = null;
+          }
+
+          this.toastr.info('Order modified', 'Updated ✏️');
+          this.lastCancelTime = 0;
+          return;
+        }
+
+        this.toastr.success(
+          `Order placed (${event.type})`,
+          'Placed 📈'
+        );
+        return;
+
+      case 'PARTIALLY_FILLED': {
+
+        const qty =
+          event.executedQuantity ||
+          event.filledQuantity ||
+          0;
+
+        if (!qty) return;
+
+        this.toastr.info(
+          `Partially filled ${qty} @ ₹${event.price}`,
+          'Order Update 📊'
+        );
         return;
       }
 
-      switch (event.status) {
+      case 'FILLED': {
 
-        case 'OPEN':
-          this.toastr.success(
-            `Order placed (${event.type})`,
-            'Placed 📈'
-          );
-          break;
+        const qty =
+          event.executedQuantity ||
+          event.filledQuantity ||
+          0;
 
-        case 'PARTIALLY_FILLED':
+        if (!qty) return;
 
-          const partialQty =
-            event.executedQuantity ||
-            event.filledQuantity ||
-            0;
-
-          if (!partialQty || partialQty === 0) return;
-
-          this.toastr.info(
-            `Partially filled ${partialQty} @ ₹${event.price}`,
-            'Order Update 📊'
-          );
-          break;
-
-        case 'FILLED':
-
-          const executedQty =
-            event.executedQuantity ||
-            event.filledQuantity ||
-            0;
-
-          if (!executedQty || executedQty === 0) return;
-
-          this.toastr.success(
-            `Executed ${executedQty} @ ₹${event.price}`,
-            'Trade Executed ⚡'
-          );
-          break;
-
-        case 'CANCELLED':
-          this.toastr.warning(
-            'Order cancelled',
-            'Cancelled ❌'
-          );
-          break;
+        this.toastr.success(
+          `Executed ${qty} @ ₹${event.price}`,
+          'Trade Executed ⚡'
+        );
+        return;
       }
-
-      this.toastDebounceMap.delete(orderId);
-
-    }, 250);
-
-    this.toastDebounceMap.set(orderId, timeout);
+    }
   }
 
   rebuildLists() {
@@ -263,15 +255,8 @@ export class OrdersComponent implements OnInit {
     order.processing = true;
 
     this.ordersService.cancelOrder(orderId).subscribe({
-
-      next: () => {
-        this.closeTicket();
-      },
-
-      error: () => {
-        order.processing = false;
-      }
-
+      next: () => this.closeTicket(),
+      error: () => order.processing = false
     });
 
   }
@@ -287,9 +272,6 @@ export class OrdersComponent implements OnInit {
 
     const order = this.openOrders.find(o => o.id === orderId);
     if (!order) return;
-
-    // ✅ ADD TO SET (correct modify tracking)
-    this.modifyingOrderIds.add(orderId);
 
     this.selectedOrder = order;
     this.mode = 'EDIT';
@@ -321,14 +303,13 @@ export class OrdersComponent implements OnInit {
 
     if (this.mode === 'EDIT' && this.selectedOrder) {
 
-      const orderId = this.selectedOrder.id!;
       const order = this.selectedOrder;
 
       if (order.processing) return;
 
       order.processing = true;
 
-      this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
+      this.ordersService.modifyOrder(order.id!, this.ticket).subscribe({
         next: () => this.closeTicket(),
         error: () => order.processing = false
       });
