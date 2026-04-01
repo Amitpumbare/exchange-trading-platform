@@ -16,7 +16,6 @@ interface Order {
   message: string;
   processing?: boolean;
 
-  // backend-provided fields (optional but supported)
   executedQuantity?: number;
   filledQuantity?: number;
 }
@@ -52,14 +51,13 @@ export class OrdersComponent implements OnInit {
     quantity: 0
   };
 
-  // 🔥 existing debounce
   private toastDebounceMap = new Map<number, any>();
 
-  // ✅ prevent duplicate toasts (tab switch / replay)
-  private processedEvents = new Set<string>();
+  // ✅ STATIC → survives component reload
+  private static processedEvents = new Set<string>();
 
-  // ✅ detect modify flow
-  private isModifyAction = false;
+  // ✅ MODIFY FIX → per order tracking
+  private modifyingOrderIds = new Set<number>();
 
   constructor(
     private ordersService: OrdersService,
@@ -78,10 +76,11 @@ export class OrdersComponent implements OnInit {
 
       this.zone.run(() => {
 
-        // ✅ dedupe events
-        const eventKey = `${event.id}-${event.status}`;
-        if (!this.processedEvents.has(eventKey)) {
-          this.processedEvents.add(eventKey);
+        // ✅ STRONGER KEY
+        const eventKey = `${event.id}-${event.status}-${event.price}-${event.quantity}`;
+
+        if (!OrdersComponent.processedEvents.has(eventKey)) {
+          OrdersComponent.processedEvents.add(eventKey);
           this.handleOrderToast(event);
         }
 
@@ -129,10 +128,10 @@ export class OrdersComponent implements OnInit {
 
     const timeout = setTimeout(() => {
 
-      // ✅ MODIFY FIX
-      if (this.isModifyAction) {
+      // ✅ MODIFY FIX (correct handling)
+      if (this.modifyingOrderIds.has(orderId)) {
         this.toastr.info('Order modified', 'Updated ✏️');
-        this.isModifyAction = false;
+        this.modifyingOrderIds.delete(orderId);
         this.toastDebounceMap.delete(orderId);
         return;
       }
@@ -146,7 +145,6 @@ export class OrdersComponent implements OnInit {
           );
           break;
 
-        // ✅ PARTIAL FIX (kept + corrected)
         case 'PARTIALLY_FILLED':
 
           const partialQty =
@@ -290,8 +288,8 @@ export class OrdersComponent implements OnInit {
     const order = this.openOrders.find(o => o.id === orderId);
     if (!order) return;
 
-    // ✅ mark modify flow
-    this.isModifyAction = true;
+    // ✅ ADD TO SET (correct modify tracking)
+    this.modifyingOrderIds.add(orderId);
 
     this.selectedOrder = order;
     this.mode = 'EDIT';

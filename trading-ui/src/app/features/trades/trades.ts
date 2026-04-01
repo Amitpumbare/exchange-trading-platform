@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TradesService } from './trades.service';
 import { WebSocketService } from '../../core/websocket.service';
+import { environment } from '../../../environments/environment';
 
 interface Trade {
   instrumentSymbol: string;
@@ -36,7 +37,9 @@ export class TradesComponent implements OnInit {
 
     this.websocket.tradeEvents$.subscribe((event: Trade) => {
 
-      console.log("TRADE EVENT RECEIVED", event);
+      if (!environment.production) {
+        console.log("TRADE EVENT RECEIVED", event);
+      }
 
       this.zone.run(() => {
 
