@@ -15,6 +15,10 @@ interface Order {
   status: 'OPEN' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELLED';
   message: string;
   processing?: boolean;
+
+  // backend-provided fields (optional but supported)
+  executedQuantity?: number;
+  filledQuantity?: number;
 }
 
 @Component({
@@ -48,8 +52,14 @@ export class OrdersComponent implements OnInit {
     quantity: 0
   };
 
-  // 🔥 ADDED: per-order toast debounce
+  // 🔥 existing debounce
   private toastDebounceMap = new Map<number, any>();
+
+  // ✅ prevent duplicate toasts (tab switch / replay)
+  private processedEvents = new Set<string>();
+
+  // ✅ detect modify flow
+  private isModifyAction = false;
 
   constructor(
     private ordersService: OrdersService,
@@ -68,9 +78,10 @@ export class OrdersComponent implements OnInit {
 
       this.zone.run(() => {
 
-        const existing = this.orders.find(o => o.id === event.id);
-
-        if (!existing || existing.status !== event.status) {
+        // ✅ dedupe events
+        const eventKey = `${event.id}-${event.status}`;
+        if (!this.processedEvents.has(eventKey)) {
+          this.processedEvents.add(eventKey);
           this.handleOrderToast(event);
         }
 
@@ -108,17 +119,23 @@ export class OrdersComponent implements OnInit {
 
   }
 
-  // 🔥 UPDATED: SINGLE TOAST PER ACTION (NO LOGIC CHANGE)
   handleOrderToast(event: Order) {
 
     const orderId = event.id!;
 
-    // clear previous pending toast for same order
     if (this.toastDebounceMap.has(orderId)) {
       clearTimeout(this.toastDebounceMap.get(orderId));
     }
 
     const timeout = setTimeout(() => {
+
+      // ✅ MODIFY FIX
+      if (this.isModifyAction) {
+        this.toastr.info('Order modified', 'Updated ✏️');
+        this.isModifyAction = false;
+        this.toastDebounceMap.delete(orderId);
+        return;
+      }
 
       switch (event.status) {
 
@@ -129,16 +146,33 @@ export class OrdersComponent implements OnInit {
           );
           break;
 
+        // ✅ PARTIAL FIX (kept + corrected)
         case 'PARTIALLY_FILLED':
+
+          const partialQty =
+            event.executedQuantity ||
+            event.filledQuantity ||
+            0;
+
+          if (!partialQty || partialQty === 0) return;
+
           this.toastr.info(
-            `Partially filled (${event.quantity})`,
+            `Partially filled ${partialQty} @ ₹${event.price}`,
             'Order Update 📊'
           );
           break;
 
         case 'FILLED':
+
+          const executedQty =
+            event.executedQuantity ||
+            event.filledQuantity ||
+            0;
+
+          if (!executedQty || executedQty === 0) return;
+
           this.toastr.success(
-            `Executed ${event.quantity} @ ₹${event.price}`,
+            `Executed ${executedQty} @ ₹${event.price}`,
             'Trade Executed ⚡'
           );
           break;
@@ -153,7 +187,7 @@ export class OrdersComponent implements OnInit {
 
       this.toastDebounceMap.delete(orderId);
 
-    }, 250); // collapse multiple events
+    }, 250);
 
     this.toastDebounceMap.set(orderId, timeout);
   }
@@ -255,6 +289,9 @@ export class OrdersComponent implements OnInit {
 
     const order = this.openOrders.find(o => o.id === orderId);
     if (!order) return;
+
+    // ✅ mark modify flow
+    this.isModifyAction = true;
 
     this.selectedOrder = order;
     this.mode = 'EDIT';
