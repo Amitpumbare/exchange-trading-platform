@@ -7,6 +7,7 @@ import {
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
@@ -18,7 +19,9 @@ export class JwtInterceptor implements HttpInterceptor {
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
 
-    console.log('JWT INTERCEPTOR CALLED:', req.url);
+    if (!environment.production) {
+        console.log('JWT INTERCEPTOR CALLED:', req.url);
+    }
 
     // 🚫 Skip token for auth endpoints
     if (req.url.includes('/api/auth/')) {
