@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
-import { ReplaySubject } from 'rxjs';
+import { Subject, ReplaySubject } from 'rxjs'; // ✅ import Subject
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -14,8 +14,9 @@ export class WebSocketService {
 
   private depthSubscription?: StompSubscription;
 
-  tradeEvents$ = new ReplaySubject<any>(10);
-  orderEvents$ = new ReplaySubject<any>(10);
+
+  tradeEvents$ = new Subject<any>();
+  orderEvents$ = new Subject<any>();
   depthEvents$ = new ReplaySubject<any>(10);
 
   constructor(private zone: NgZone) {}
@@ -73,9 +74,7 @@ export class WebSocketService {
 
       this.connecting = false;
 
-      if (!userId) {
-        return;
-      }
+      if (!userId) return;
 
       if (this.subscribed) return;
       this.subscribed = true;
@@ -106,8 +105,6 @@ export class WebSocketService {
 
     this.client.activate();
   }
-
-  // DEPTH SUBSCRIPTION
 
   subscribeDepth(instrumentId: string) {
 
