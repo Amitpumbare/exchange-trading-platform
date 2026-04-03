@@ -12,12 +12,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByInstrumentIdAndStatusIn(Long instrumentId, List<OrderStatus> statuses);
 
-    List<Order> findByMessageIsNull();
-
-    List<Order> findByUserId(Long userId);
-
-
-    // ✅ USER ORDER RESPONSES (JOIN projection)
+    // ✅ USER ORDER RESPONSES (UPDATED)
     @Query("""
         SELECT new com.example.tradingplatform.dto.OrderResponse(
             o.id,
@@ -25,6 +20,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             o.type,
             o.price,
             o.quantity,
+            o.executedQuantity,
             o.status,
             o.message
         )
@@ -35,8 +31,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     """)
     List<OrderResponse> findOrderResponsesForUser(Long userId);
 
-
-    // ✅ ADMIN ORDER RESPONSES
+    // ✅ ADMIN ORDER RESPONSES (UPDATED)
     @Query("""
         SELECT new com.example.tradingplatform.dto.OrderResponse(
             o.id,
@@ -44,13 +39,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             o.type,
             o.price,
             o.quantity,
+            o.executedQuantity,
             o.status,
             o.message
         )
         FROM Order o
         JOIN Instrument i ON i.id = o.instrumentId
         ORDER BY o.createdAt DESC
-    """)
+   \s""")
     List<OrderResponse> findAllOrderResponses();
 
 }
