@@ -16,6 +16,8 @@ export interface OrderResponse {
 
   quantity: number;
 
+  executedQuantity: number;
+
   status: 'OPEN' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELLED';
 
   message: string;

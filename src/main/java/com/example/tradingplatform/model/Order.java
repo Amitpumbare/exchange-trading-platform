@@ -13,8 +13,7 @@ import java.time.Instant;
                 @Index(name = "idx_order_user", columnList = "user_id")
         }
 )
-public class Order{
-
+public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,8 +29,13 @@ public class Order{
     @Column(nullable = false)
     private double price;
 
+    // ✅ ORIGINAL ORDER SIZE (DO NOT MUTATE)
     @Column(nullable = false)
     private long quantity;
+
+    // ✅ NEW: TRACK EXECUTED QUANTITY
+    @Column(nullable = false)
+    private long executedQuantity = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -56,6 +60,7 @@ public class Order{
                  OrderType type,
                  double price,
                  long quantity,
+                 long executedQuantity,
                  OrderStatus status,
                  Instant createdAt,
                  String message,
@@ -65,10 +70,11 @@ public class Order{
         this.type = type;
         this.price = price;
         this.quantity = quantity;
+        this.executedQuantity = executedQuantity;
         this.status = status;
         this.createdAt = createdAt;
         this.message = message;
-        this.instrumentId=instrumentId;
+        this.instrumentId = instrumentId;
     }
 
     // ---------- Getters & Setters ----------
@@ -81,7 +87,6 @@ public class Order{
         this.id = id;
     }
 
-    // ✅ NEW
     public Long getUserId() {
         return userId;
     }
@@ -114,6 +119,20 @@ public class Order{
         this.quantity = quantity;
     }
 
+    // ✅ NEW FIELD
+    public long getExecutedQuantity() {
+        return executedQuantity;
+    }
+
+    public void setExecutedQuantity(long executedQuantity) {
+        this.executedQuantity = executedQuantity;
+    }
+
+    // ✅ HELPER METHOD (VERY USEFUL)
+    public long getRemainingQuantity() {
+        return quantity - executedQuantity;
+    }
+
     public OrderStatus getStatus() {
         return status;
     }
@@ -138,9 +157,13 @@ public class Order{
         this.message = message;
     }
 
-    public Long getInstrumentId(){ return instrumentId; }
+    public Long getInstrumentId() {
+        return instrumentId;
+    }
 
-    public void setInstrumentId(Long instrumentId) { this.instrumentId = instrumentId; }
+    public void setInstrumentId(Long instrumentId) {
+        this.instrumentId = instrumentId;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -149,11 +172,8 @@ public class Order{
         return this.id != null && this.id.equals(other.id);
     }
 
-
     @Override
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
     }
-
-
 }

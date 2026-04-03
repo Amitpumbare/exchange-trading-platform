@@ -15,12 +15,10 @@ interface Order {
   type: 'BUY' | 'SELL';
   price: number;
   quantity: number;
+  executedQuantity: number;
   status: 'OPEN' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELLED';
   message: string;
   processing?: boolean;
-
-  executedQuantity?: number;
-  filledQuantity?: number;
 }
 
 @Component({
@@ -54,13 +52,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
     quantity: 0
   };
 
-  // ✅ MODIFY detection
   private lastCancelTime = 0;
-
-  // ✅ CANCEL delay handler
   private cancelTimeout: any = null;
-
-  // ✅ Subscription cleanup
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -76,7 +69,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     this.loadOrders();
 
-    // ✅ FIXED: WebSocket subscription with cleanup
     this.websocket.orderEvents$
       .pipe(takeUntil(this.destroy$))
       .subscribe((event: Order) => {
@@ -100,7 +92,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
       });
 
-    // ✅ FIXED: Instrument subscription with cleanup
     this.instrumentService.selectedInstrument$
       .pipe(takeUntil(this.destroy$))
       .subscribe((inst: Instrument | null) => {
@@ -121,12 +112,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   }
 
-  // 🔥 FINAL TOAST LOGIC (STABLE)
   processEvent(event: Order) {
 
     const now = Date.now();
 
-    // safety reset (prevents stale state)
     if (now - this.lastCancelTime > 2000) {
       this.lastCancelTime = 0;
       if (this.cancelTimeout) {
@@ -176,16 +165,11 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
       case 'PARTIALLY_FILLED': {
 
-
-        console.log('🟡 PARTIAL EVENT RECEIVED:', event);
-
-        const qty =
-          event.executedQuantity ??
-          event.filledQuantity;
-
+        const executed = event.executedQuantity ?? 0;
+        const total = event.quantity ?? 0;
 
         this.toastr.info(
-          `Partially filled ${qty} @ ₹${event.price}`,
+          `Filled ${executed}/${total} @ ₹${event.price}`,
           'Order Update 📊'
         );
 
@@ -194,17 +178,13 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
       case 'FILLED': {
 
-        const qty =
-          event.executedQuantity ||
-          event.filledQuantity ||
-          0;
-
-        if (!qty) return;
+        const executed = event.executedQuantity ?? event.quantity ?? 0;
 
         this.toastr.success(
-          `Executed ${qty} @ ₹${event.price}`,
+          `Executed ${executed} @ ₹${event.price}`,
           'Trade Executed ⚡'
         );
+
         return;
       }
     }
@@ -290,7 +270,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.ordersService.cancelOrder(orderId).subscribe({
       next: () => {
         this.closeTicket();
-        this.loadOrders(); // ✅ fallback sync
+        this.loadOrders();
       },
       error: () => order.processing = false
     });
@@ -348,7 +328,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
       this.ordersService.modifyOrder(order.id!, this.ticket).subscribe({
         next: () => {
           this.closeTicket();
-          this.loadOrders(); // ✅ fallback sync
+          this.loadOrders();
         },
         error: () => order.processing = false
       });
@@ -363,7 +343,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
         next: () => {
           this.closeTicket();
-          this.loadOrders(); // ✅ fallback sync
+          this.loadOrders();
         },
 
         error: () => this.isPlacingOrder = false,

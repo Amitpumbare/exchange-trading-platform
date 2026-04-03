@@ -12,6 +12,7 @@ public record OrderResponse(
         OrderType type,
         double price,
         long quantity,
+        long executedQuantity,
         OrderStatus status,
         String message
 
