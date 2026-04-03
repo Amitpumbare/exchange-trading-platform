@@ -189,7 +189,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
           'Order Update 📊'
         );
 
-        this.cd.detectChanges();
         return;
       }
 
