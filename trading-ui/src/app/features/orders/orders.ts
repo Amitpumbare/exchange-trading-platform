@@ -177,16 +177,16 @@ export class OrdersComponent implements OnInit, OnDestroy {
       case 'PARTIALLY_FILLED': {
 
         const qty =
-          event.executedQuantity ||
-          event.filledQuantity ||
-          0;
+          event.executedQuantity ??
+          event.filledQuantity;
 
-        if (!qty) return;
 
         this.toastr.info(
           `Partially filled ${qty} @ ₹${event.price}`,
           'Order Update 📊'
         );
+
+        this.cd.detectChanges();
         return;
       }
 
