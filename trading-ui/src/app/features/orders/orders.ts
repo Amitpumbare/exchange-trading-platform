@@ -176,6 +176,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
       case 'PARTIALLY_FILLED': {
 
+
+        console.log('🟡 PARTIAL EVENT RECEIVED:', event);
+
         const qty =
           event.executedQuantity ??
           event.filledQuantity;
