@@ -192,7 +192,7 @@ public class OrderMatchingEngine {
         for (Order order : buyBook) {
             bidLevels.merge(
                     order.getPrice(),
-                    order.getQuantity(),
+                    order.getRemainingQuantity(),
                     Long::sum
             );
         }
@@ -200,7 +200,7 @@ public class OrderMatchingEngine {
         for (Order order : sellBook) {
             askLevels.merge(
                     order.getPrice(),
-                    order.getQuantity(),
+                    order.getRemainingQuantity(),
                     Long::sum
             );
         }
