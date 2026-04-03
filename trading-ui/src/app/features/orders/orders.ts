@@ -75,18 +75,26 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
         this.zone.run(() => {
 
-          this.processEvent(event);
+          try {
+            this.processEvent(event);
 
-          const index = this.orders.findIndex(o => o.id === event.id);
+            const index = this.orders.findIndex(o => o.id === event.id);
 
-          if (index !== -1) {
-            this.orders[index] = event;
-          } else {
-            this.orders.unshift(event);
+            if (index !== -1) {
+              // ✅ IMMUTABLE UPDATE (fixes UI sync issues)
+              this.orders = this.orders.map(o =>
+                o.id === event.id ? { ...o, ...event } : o
+              );
+            } else {
+              this.orders = [event, ...this.orders];
+            }
+
+            this.rebuildLists();
+            this.cd.detectChanges();
+
+          } catch (err) {
+            console.error("🚨 Event crash prevented:", err, event);
           }
-
-          this.rebuildLists();
-          this.cd.detectChanges();
 
         });
 
@@ -113,6 +121,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   processEvent(event: Order) {
+
+    if (!event || !event.status) return; // ✅ guard
 
     const now = Date.now();
 
@@ -167,9 +177,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
         const executed = event.executedQuantity ?? 0;
         const total = event.quantity ?? 0;
+        const price = event.price ?? 0;
 
         this.toastr.info(
-          `Filled ${executed}/${total} @ ₹${event.price}`,
+          `Filled ${executed}/${total} @ ₹${price}`,
           'Order Update 📊'
         );
 
@@ -179,9 +190,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
       case 'FILLED': {
 
         const executed = event.executedQuantity ?? event.quantity ?? 0;
+        const price = event.price ?? 0;
 
         this.toastr.success(
-          `Executed ${executed} @ ₹${event.price}`,
+          `Executed ${executed} @ ₹${price}`,
           'Trade Executed ⚡'
         );
 
@@ -239,23 +251,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   resetTicket() {
-
     this.ticket = {
       type: 'BUY',
       price: 0,
       quantity: 0
     };
-
   }
 
   openNewOrderTicket() {
-
     this.selectedOrder = undefined;
     this.mode = 'CREATE';
     this.isTicketOpen = true;
-
     this.resetTicket();
-
   }
 
   cancelOrder(orderId: number, event?: MouseEvent) {
