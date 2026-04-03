@@ -10,23 +10,25 @@
   backdrop-filter: blur(6px);
 
   border-radius: 16px;
-
   padding: 20px;
 
   border: 1px solid rgba(255,255,255,0.08);
 
   width: 420px;
-
 }
 
 .depth-panel h2 {
-
   color: #e2e8f0;
-
-  margin-bottom: 16px;
-
+  margin-bottom: 4px;
   letter-spacing: 0.5px;
+}
 
+/* 🔥 NEW: subtle helper text */
+.hint {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 12px;
 }
 
 /* =========================
@@ -34,81 +36,57 @@
 ========================= */
 
 .depth-table {
-
   display: flex;
-
   flex-direction: column;
-
   width: 100%;
-
 }
 
 .depth-row {
-
   display: grid;
-
   grid-template-columns: 1fr 1fr 1fr 1fr;
-
   padding: 8px 0;
-
   font-size: 14px;
-
   align-items: center;
-
 }
 
+/* 🔥 Slight improvement for header clarity */
 .depth-row.header {
-
-  color: #94a3b8;
-
+  color: #cbd5f5;
   font-weight: 600;
-
   border-bottom: 1px solid rgba(255,255,255,0.1);
-
   margin-bottom: 6px;
-
   padding-bottom: 10px;
-
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.6px;
 }
 
 /* =========================
-   BID SIDE
+   BID SIDE (BUY)
 ========================= */
 
 .bid-price {
-
   color: #22c55e;
-
   font-weight: 700;
-
 }
 
 .bid-qty {
-
-  color: #22c55e;
-
+  color: #4ade80;
   font-weight: 600;
-
 }
 
 /* =========================
-   ASK SIDE
+   ASK SIDE (SELL)
 ========================= */
 
 .ask-price {
-
   color: #ef4444;
-
   font-weight: 700;
-
 }
 
 .ask-qty {
-
-  color: #ef4444;
-
+  color: #f87171;
   font-weight: 600;
-
 }
 
 /* =========================
@@ -116,9 +94,6 @@
 ========================= */
 
 .loading {
-
   color: #94a3b8;
-
   margin-bottom: 12px;
-
 }
