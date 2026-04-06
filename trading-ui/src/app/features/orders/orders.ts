@@ -15,7 +15,7 @@ interface Order {
   type: 'BUY' | 'SELL';
   price: number;
   quantity: number;
-  executedQuantity: number;
+  executedQuantity?: number; // ✅ FIXED
   status: 'OPEN' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELLED';
   message: string;
   processing?: boolean;
@@ -69,21 +69,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     this.loadOrders();
 
-    this.websocket.orderEvents$.subscribe((event: Order) => {
+    this.websocket.orderEvents$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((event: Order) => {
 
         this.zone.run(() => {
 
           try {
             this.processEvent(event);
 
-        if (index !== -1) {
-          this.orders[index] = event;
-        } else {
-          this.orders.unshift(event);
-        }
+            const index = this.orders.findIndex(o => o.id === event.id);
 
             if (index !== -1) {
-              // ✅ IMMUTABLE UPDATE (fixes UI sync issues)
               this.orders = this.orders.map(o =>
                 o.id === event.id ? { ...o, ...event } : o
               );
@@ -124,7 +121,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   processEvent(event: Order) {
 
-    if (!event || !event.status) return; // ✅ guard
+    if (!event || !event.status) return;
 
     const now = Date.now();
 
@@ -279,7 +276,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.ordersService.cancelOrder(orderId).subscribe({
       next: () => {
         this.closeTicket();
-        this.loadOrders();   // ✅ FIX
+        this.loadOrders();
       },
       error: () => order.processing = false
     });
@@ -334,10 +331,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
       order.processing = true;
 
-      this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
+      this.ordersService.modifyOrder(order.id!, this.ticket).subscribe({
         next: () => {
           this.closeTicket();
-          this.loadOrders();   // ✅ FIX
+          this.loadOrders();
         },
         error: () => order.processing = false
       });
@@ -352,7 +349,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
         next: () => {
           this.closeTicket();
-          this.loadOrders();   // ✅ FIX
+          this.loadOrders();
         },
 
         error: () => this.isPlacingOrder = false,
