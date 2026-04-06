@@ -6,8 +6,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: trading_engine
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: post1234
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     logging:
@@ -33,12 +33,12 @@ services:
       - redis
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/trading_engine
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: post1234
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-      MAIL_USERNAME: amitprashantumbare@gmail.com
-      MAIL_PASSWORD: hajidqdztruwinfs
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
     logging:
       options:
         max-size: "10m"
