@@ -59,7 +59,7 @@ public class PasswordResetService {
         tokenRepository.save(resetToken);
 
         String resetLink =
-                "http://13.233.63.4/reset-password?token=" + token;
+                "http://52.66.181.34/reset-password?token=" + token;
 
         logger.info("🔐 PASSWORD RESET LINK for {}: {}", user.getEmail(), resetLink);
 
