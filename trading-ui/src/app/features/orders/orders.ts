@@ -1,9 +1,13 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrdersService } from './orders.service';
 import { FormsModule } from '@angular/forms';
 import { InstrumentService, Instrument } from '../../core/instrument.service';
 import { WebSocketService } from '../../core/websocket.service';
+import { ToastrService } from 'ngx-toastr';
+
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 interface Order {
   id?: number;
@@ -11,6 +15,7 @@ interface Order {
   type: 'BUY' | 'SELL';
   price: number;
   quantity: number;
+  executedQuantity: number;
   status: 'OPEN' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELLED';
   message: string;
   processing?: boolean;
@@ -23,7 +28,7 @@ interface Order {
   templateUrl: './orders.html',
   styleUrls: ['./orders.css']
 })
-export class OrdersComponent implements OnInit {
+export class OrdersComponent implements OnInit, OnDestroy {
 
   orders: Order[] = [];
   openOrders: Order[] = [];
@@ -47,12 +52,17 @@ export class OrdersComponent implements OnInit {
     quantity: 0
   };
 
+  private lastCancelTime = 0;
+  private cancelTimeout: any = null;
+  private destroy$ = new Subject<void>();
+
   constructor(
     private ordersService: OrdersService,
     private cd: ChangeDetectorRef,
     private instrumentService: InstrumentService,
     private websocket: WebSocketService,
-    private zone: NgZone
+    private zone: NgZone,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
@@ -61,9 +71,10 @@ export class OrdersComponent implements OnInit {
 
     this.websocket.orderEvents$.subscribe((event: Order) => {
 
-      this.zone.run(() => {
+        this.zone.run(() => {
 
-        const index = this.orders.findIndex(o => o.id === event.id);
+          try {
+            this.processEvent(event);
 
         if (index !== -1) {
           this.orders[index] = event;
@@ -71,14 +82,28 @@ export class OrdersComponent implements OnInit {
           this.orders.unshift(event);
         }
 
-        this.rebuildLists();
-        this.cd.detectChanges();
+            if (index !== -1) {
+              // ✅ IMMUTABLE UPDATE (fixes UI sync issues)
+              this.orders = this.orders.map(o =>
+                o.id === event.id ? { ...o, ...event } : o
+              );
+            } else {
+              this.orders = [event, ...this.orders];
+            }
+
+            this.rebuildLists();
+            this.cd.detectChanges();
+
+          } catch (err) {
+            console.error("🚨 Event crash prevented:", err, event);
+          }
+
+        });
 
       });
 
-    });
-
     this.instrumentService.selectedInstrument$
+      .pipe(takeUntil(this.destroy$))
       .subscribe((inst: Instrument | null) => {
 
         if (!inst) return;
@@ -95,6 +120,93 @@ export class OrdersComponent implements OnInit {
 
       });
 
+  }
+
+  processEvent(event: Order) {
+
+    if (!event || !event.status) return; // ✅ guard
+
+    const now = Date.now();
+
+    if (now - this.lastCancelTime > 2000) {
+      this.lastCancelTime = 0;
+      if (this.cancelTimeout) {
+        clearTimeout(this.cancelTimeout);
+        this.cancelTimeout = null;
+      }
+    }
+
+    switch (event.status) {
+
+      case 'CANCELLED':
+
+        if (this.cancelTimeout) {
+          clearTimeout(this.cancelTimeout);
+        }
+
+        this.cancelTimeout = setTimeout(() => {
+          this.toastr.warning('Order cancelled', 'Cancelled ❌');
+          this.cancelTimeout = null;
+        }, 300);
+
+        this.lastCancelTime = now;
+        return;
+
+      case 'OPEN':
+
+        if (now - this.lastCancelTime < 500) {
+
+          if (this.cancelTimeout) {
+            clearTimeout(this.cancelTimeout);
+            this.cancelTimeout = null;
+          }
+
+          this.toastr.info('Order modified', 'Updated ✏️');
+
+          this.lastCancelTime = 0;
+          return;
+        }
+
+        this.toastr.success(
+          `Order placed (${event.type})`,
+          'Placed 📈'
+        );
+
+        this.lastCancelTime = 0;
+        return;
+
+      case 'PARTIALLY_FILLED': {
+
+        const executed = event.executedQuantity ?? 0;
+        const total = event.quantity ?? 0;
+        const price = event.price ?? 0;
+
+        this.toastr.info(
+          `Filled ${executed}/${total} @ ₹${price}`,
+          'Order Update 📊'
+        );
+
+        return;
+      }
+
+      case 'FILLED': {
+
+        const executed = event.executedQuantity ?? event.quantity ?? 0;
+        const price = event.price ?? 0;
+
+        this.toastr.success(
+          `Executed ${executed} @ ₹${price}`,
+          'Trade Executed ⚡'
+        );
+
+        return;
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   rebuildLists() {
@@ -141,23 +253,18 @@ export class OrdersComponent implements OnInit {
   }
 
   resetTicket() {
-
     this.ticket = {
       type: 'BUY',
       price: 0,
       quantity: 0
     };
-
   }
 
   openNewOrderTicket() {
-
     this.selectedOrder = undefined;
     this.mode = 'CREATE';
     this.isTicketOpen = true;
-
     this.resetTicket();
-
   }
 
   cancelOrder(orderId: number, event?: MouseEvent) {
@@ -170,16 +277,11 @@ export class OrdersComponent implements OnInit {
     order.processing = true;
 
     this.ordersService.cancelOrder(orderId).subscribe({
-
       next: () => {
         this.closeTicket();
         this.loadOrders();   // ✅ FIX
       },
-
-      error: () => {
-        order.processing = false;
-      }
-
+      error: () => order.processing = false
     });
 
   }
@@ -226,7 +328,6 @@ export class OrdersComponent implements OnInit {
 
     if (this.mode === 'EDIT' && this.selectedOrder) {
 
-      const orderId = this.selectedOrder.id!;
       const order = this.selectedOrder;
 
       if (order.processing) return;

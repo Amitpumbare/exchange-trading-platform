@@ -109,32 +109,40 @@ public class OrderMatchingEngine {
             Order buy = buyBook.poll();
             Order sell = sellBook.poll();
 
-            if(buy.getUserId().equals(sell.getUserId())){
+            if (buy.getUserId().equals(sell.getUserId())) {
                 buyBook.offer(buy);
                 sellBook.offer(sell);
                 break;
             }
 
-            long matchedQty = Math.min(buy.getQuantity(), sell.getQuantity());
+            // ✅ USE REMAINING QUANTITY
+            long buyRemaining = buy.getRemainingQuantity();
+            long sellRemaining = sell.getRemainingQuantity();
 
-            long remainingBuy = buy.getQuantity() - matchedQty;
-            if (remainingBuy == 0) {
-                buy.setQuantity(0);
+            long matchedQty = Math.min(buyRemaining, sellRemaining);
+
+            // ✅ UPDATE EXECUTED QUANTITY (NOT quantity)
+            buy.setExecutedQuantity(
+                    buy.getExecutedQuantity() + matchedQty
+            );
+
+            sell.setExecutedQuantity(
+                    sell.getExecutedQuantity() + matchedQty
+            );
+
+            // ✅ UPDATE STATUS BASED ON EXECUTION
+            if (buy.getExecutedQuantity() == buy.getQuantity()) {
                 buy.setStatus(OrderStatus.FILLED);
                 buy.setMessage("Order fully executed");
             } else {
-                buy.setQuantity(remainingBuy);
                 buy.setStatus(OrderStatus.PARTIALLY_FILLED);
                 buy.setMessage("Partially filled. Waiting for remaining quantity");
             }
 
-            long remainingSell = sell.getQuantity() - matchedQty;
-            if (remainingSell == 0) {
-                sell.setQuantity(0);
+            if (sell.getExecutedQuantity() == sell.getQuantity()) {
                 sell.setStatus(OrderStatus.FILLED);
                 sell.setMessage("Order fully executed");
             } else {
-                sell.setQuantity(remainingSell);
                 sell.setStatus(OrderStatus.PARTIALLY_FILLED);
                 sell.setMessage("Partially filled. Waiting for remaining quantity");
             }
@@ -184,7 +192,7 @@ public class OrderMatchingEngine {
         for (Order order : buyBook) {
             bidLevels.merge(
                     order.getPrice(),
-                    order.getQuantity(),
+                    order.getRemainingQuantity(),
                     Long::sum
             );
         }
@@ -192,7 +200,7 @@ public class OrderMatchingEngine {
         for (Order order : sellBook) {
             askLevels.merge(
                     order.getPrice(),
-                    order.getQuantity(),
+                    order.getRemainingQuantity(),
                     Long::sum
             );
         }

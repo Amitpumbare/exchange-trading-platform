@@ -3,6 +3,7 @@
   <div class="depth-panel">
 
     <h2>Order Book</h2>
+    <small class="hint">Buy vs Sell (Live Market Depth)</small>
 
     <div *ngIf="loading" class="loading">
       Loading…
@@ -14,13 +15,10 @@
 
       <div class="depth-row header">
 
-        <span>Bid Qty</span>
-
-        <span>Bid Price</span>
-
-        <span>Ask Price</span>
-
-        <span>Ask Qty</span>
+        <span>Buy Qty</span>
+        <span>Buy Price</span>
+        <span>Sell Price</span>
+        <span>Sell Qty</span>
 
       </div>
 

@@ -18,7 +18,7 @@ public class CorsConfig {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:4200",
-                "http://13.233.63.4"
+                "http://52.66.181.34"
         ));
 
         config.setAllowedMethods(List.of(

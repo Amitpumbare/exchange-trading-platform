@@ -15,7 +15,6 @@ import { ToastrService } from 'ngx-toastr';
 
 import { AuthService } from '../auth.service';
 
-
 @Component({
   selector: 'app-reset-password',
   standalone: true,
@@ -27,6 +26,9 @@ export class ResetPasswordComponent implements OnInit {
 
   token!: string;
 
+  // 👁️ toggle state
+  showPassword = false;
+
   constructor(
     private route: ActivatedRoute,
     private auth: AuthService,
@@ -34,13 +36,15 @@ export class ResetPasswordComponent implements OnInit {
     private toastr: ToastrService
   ) {}
 
-  form = new FormGroup({
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
 
+  form = new FormGroup({
     password: new FormControl('', [
       Validators.required,
       Validators.minLength(8)
     ])
-
   });
 
   get password() {
@@ -48,30 +52,26 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   ngOnInit() {
-
     this.token =
       this.route.snapshot.queryParamMap.get('token')!;
-
   }
 
   onSubmit() {
 
-    if (!this.form.valid) return;
+    if (!this.form.valid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     this.auth.resetPassword({
-
       token: this.token,
-
       newPassword: this.form.value.password!
-
     })
     .subscribe({
 
       next: () => {
 
-        this.toastr.success(
-          'Password reset successful'
-        );
+        this.toastr.success('Password reset successful');
 
         this.router.navigate(['/login']);
 
@@ -86,7 +86,5 @@ export class ResetPasswordComponent implements OnInit {
       }
 
     });
-
   }
-
 }

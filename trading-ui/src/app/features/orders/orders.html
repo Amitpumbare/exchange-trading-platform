@@ -16,7 +16,6 @@
 </div>
 
 
-<!-- PLACE ORDER BUTTON -->
 <button
   class="place-order-btn"
   *ngIf="view === 'OPEN'"
@@ -27,7 +26,6 @@
 </button>
 
 
-<!-- ================= OPEN ORDERS ================= -->
 <div *ngIf="view === 'OPEN'" class="orders-layout">
 
   <div class="orders-book">
@@ -98,7 +96,7 @@
           <div class="value-row">
             <span>Quantity</span>
             <span class="numeric">
-              {{ item.quantity | number:'1.0-2' }}
+              {{ item.executedQuantity || 0 }} / {{ item.quantity }}
             </span>
           </div>
 
@@ -132,7 +130,6 @@
   </div>
 
 
-  <!-- ===== SLIDING TICKET ===== -->
   <div
     class="ticket-wrapper"
     [class.open]="isTicketOpen">
@@ -197,7 +194,6 @@
 </div>
 
 
-<!-- ================= ORDER HISTORY ================= -->
 <div *ngIf="view === 'HISTORY'" class="orders-book">
 
   <h2>Order History</h2>
@@ -265,7 +261,7 @@
         <div class="value-row">
           <span>Quantity</span>
           <span class="numeric">
-            {{ item.quantity | number:'1.0-2' }}
+            {{ item.executedQuantity || 0 }} / {{ item.quantity }}
           </span>
         </div>
 

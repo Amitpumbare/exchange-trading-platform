@@ -27,6 +27,18 @@ export class SignupComponent {
     private toastr: ToastrService
   ) {}
 
+  // 👁️ toggle states
+  showPassword = false;
+  showConfirmPassword = false;
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPassword() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
   signupForm = new FormGroup({
     fullName: new FormControl('', [
       Validators.required,
@@ -60,10 +72,8 @@ export class SignupComponent {
     this.auth.signup(this.signupForm.value).subscribe({
       next: () => {
 
-        // ✅ SUCCESS TOAST
         this.toastr.success('Account created successfully');
 
-        // ⏱ wait for toast animation
         setTimeout(() => {
           this.router.navigate(['/login']);
         }, 1500);

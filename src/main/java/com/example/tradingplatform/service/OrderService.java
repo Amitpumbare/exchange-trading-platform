@@ -53,8 +53,6 @@ public class OrderService {
         }
     }
 
-    // ================= HELPER =================
-
     public OrderResponse toOrderResponse(Order order) {
 
         Instrument instrument = instrumentRepository.findById(order.getInstrumentId())
@@ -66,12 +64,11 @@ public class OrderService {
                 order.getType(),
                 order.getPrice(),
                 order.getQuantity(),
+                order.getExecutedQuantity(),
                 order.getStatus(),
                 order.getMessage()
         );
     }
-
-    // ================= DEPTH PUBLISHER =================
 
     private void publishDepthUpdate(Long instrumentId) {
 
@@ -90,8 +87,6 @@ public class OrderService {
                 depth
         );
     }
-
-    // ================= CREATE ORDER =================
 
     @Transactional
     @Caching(
@@ -117,6 +112,7 @@ public class OrderService {
         order.setType(type);
         order.setPrice(price);
         order.setQuantity(quantity);
+        order.setExecutedQuantity(0);
         order.setStatus(OrderStatus.OPEN);
         order.setCreatedAt(Instant.now());
         order.setMessage(getDefaultMessage(OrderStatus.OPEN));
@@ -126,7 +122,6 @@ public class OrderService {
 
         engine.process(saved);
 
-        // 🔴 DEPTH UPDATE
         publishDepthUpdate(instrumentId);
 
         List<Trade> trades =
@@ -201,8 +196,6 @@ public class OrderService {
                 .orElseThrow(() -> new TradeNotFoundException(id));
     }
 
-    // ================= CANCEL ORDER =================
-
     @Transactional
     @Caching(
             evict = {
@@ -238,7 +231,6 @@ public class OrderService {
 
         engine.removeOrder(order);
 
-        // 🔴 DEPTH UPDATE
         publishDepthUpdate(order.getInstrumentId());
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -250,8 +242,6 @@ public class OrderService {
 
         return cancelled;
     }
-
-    // ================= MODIFY ORDER =================
 
     @Transactional
     @Caching(
@@ -291,7 +281,6 @@ public class OrderService {
 
         engine.removeOrder(order);
 
-        // 🔴 DEPTH UPDATE
         publishDepthUpdate(order.getInstrumentId());
 
         order.setStatus(OrderStatus.CANCELLED);
