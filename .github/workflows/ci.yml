@@ -3,7 +3,7 @@ name: Trading Platform CI
 on:
   push:
     branches:
-      - main
+      - master
       - feature/*
 
 jobs:
