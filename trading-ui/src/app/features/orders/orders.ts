@@ -69,16 +69,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     this.loadOrders();
 
-    this.websocket.orderEvents$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((event: Order) => {
+    this.websocket.orderEvents$.subscribe((event: Order) => {
 
         this.zone.run(() => {
 
           try {
             this.processEvent(event);
 
-            const index = this.orders.findIndex(o => o.id === event.id);
+        if (index !== -1) {
+          this.orders[index] = event;
+        } else {
+          this.orders.unshift(event);
+        }
 
             if (index !== -1) {
               // ✅ IMMUTABLE UPDATE (fixes UI sync issues)
@@ -277,7 +279,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.ordersService.cancelOrder(orderId).subscribe({
       next: () => {
         this.closeTicket();
-        this.loadOrders();
+        this.loadOrders();   // ✅ FIX
       },
       error: () => order.processing = false
     });
@@ -332,10 +334,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
       order.processing = true;
 
-      this.ordersService.modifyOrder(order.id!, this.ticket).subscribe({
+      this.ordersService.modifyOrder(orderId, this.ticket).subscribe({
         next: () => {
           this.closeTicket();
-          this.loadOrders();
+          this.loadOrders();   // ✅ FIX
         },
         error: () => order.processing = false
       });
@@ -350,7 +352,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
         next: () => {
           this.closeTicket();
-          this.loadOrders();
+          this.loadOrders();   // ✅ FIX
         },
 
         error: () => this.isPlacingOrder = false,
